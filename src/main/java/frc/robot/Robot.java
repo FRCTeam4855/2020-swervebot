@@ -29,11 +29,11 @@ public class Robot extends TimedRobot {
 			
 	// CONTROL CONSTANTS
 	
-	final double CONTROL_SPEEDREDUCTION = .6; 	  			// teleop drivetrain inputs are multiplied by this number when turbo is NOT engaged
+	final double CONTROL_SPEEDREDUCTION = .6; 	  			  // teleop drivetrain inputs are multiplied by this number when turbo is NOT engaged
 	final double CONTROL_SPEEDREDUCTION_PRECISION = 3.2;	// teleop drivetrain inputs are divided by this number when precision trigger is engaged
-	final double CONTROL_DEADZONE = 0.21;       			// minimum value before joystick inputs will be considered on the swerves
+	final double CONTROL_DEADZONE = 0.21;       			    // minimum value before joystick inputs will be considered on the swerves
 
-	final boolean INTERFACE_SINGLEDRIVER = false;  			// whether or not to enable or disable single driver input (press START to switch between controllers)
+	final boolean INTERFACE_SINGLEDRIVER = false;  		  	// whether or not to enable or disable single driver input (press START to switch between controllers)
 	//=======================================
 	
 	// OTHER CONSTANTS
@@ -59,14 +59,14 @@ public class Robot extends TimedRobot {
 
 	// BEGINNING VARIABLES
 	
-	int wheelTune = 0; 								// Remembers what wheel we are tweaking in test mode
-	int singleDriverController = 0; 				// port number of controller to operate
-	boolean emergencyTank = false; 					// True if the robot is in emergency tank drive mode
-	boolean reverseRotate = false; 					// ?????
-	boolean driverOriented = true; 					// true = driver oriented, false = robot oriented
-	static double matchTime = 0;					// the calculated match time from the driver station
+	int wheelTune = 0; 								        // Remembers what wheel we are tweaking in test mode
+	int singleDriverController = 0; 				  // port number of controller to operate
+	boolean emergencyTank = false; 					  // True if the robot is in emergency tank drive mode
+	boolean reverseRotate = false; 					  // ?????
+	boolean driverOriented = true; 				  	// true = driver oriented, false = robot oriented
+	static double matchTime = 0;					    // the calculated match time from the driver station
 	boolean emergencyReadjust = false;				// if hell has come to earth and you need to manually adjust wheels during a match, this will be enabled
-	String playType = "MATCH";						// whether to act as if in a match ("MATCH") or testing ("TEST")
+	String playType = "MATCH";					    	// whether to act as if in a match ("MATCH") or testing ("TEST")
 	// All for calculating wheel speed/angle, if you need to read from a motor don't pull from these
 	static double a, b, c, d, max, temp, rads; 
 	static double encoderSetpointA, encoderSetpointB, encoderSetpointC, encoderSetpointD;
