@@ -174,8 +174,6 @@ public class Robot extends TimedRobot {
 		wheelSpeedTimer.start();
 		wheelSpeedTimer.reset();
 		ahrs.reset();
-
-		init(false);
 	}
 
 	/**
@@ -183,32 +181,12 @@ public class Robot extends TimedRobot {
 	 */
 	@Override
 	public void autonomousPeriodic() {
-		//SmartDashboard.putNumber("Gyro", ahrs.getYaw());
-		//SmartDashboard.putNumber("CIMCODER",encoderDistance.get());
-		matchTime = DriverStation.getInstance().getMatchTime();
-		periodic(true);
 	}
 	
 	/**
 	 * This function is called when teleop begins
 	 */
 	public void teleopInit() {
-		//if (playType == "MATCH") init(true); else init(false);
-		init(true);
-	}
-	
-	/**
-	 * This function is called periodically during teleop mode
-	 */
-	@Override
-	public void teleopPeriodic() {
-		periodic(false);
-	} 
-
-	/**
-	 * This should be run whenever the robot is being enabled
-	 */
-	public void init(boolean fromSandstorm) {
 		setAllPIDControllers(PIDdrive, true);
 		wheelSpeedTimer.start();
 		wheelSpeedTimer.reset();
@@ -217,11 +195,12 @@ public class Robot extends TimedRobot {
 		ahrs.reset();
 		driverOriented = true;
 	}
-
+	
 	/**
-	 * Drives the robot. Run this whenever you want to drive the robot. Everything is here. This is how to drive the robot.
+	 * This function is called periodically during teleop mode
 	 */
-	public void periodic(boolean sandstormActive) {
+	@Override
+	public void teleopPeriodic() {
 		// Begin DRIVER CONTROL
 		if (INTERFACE_SINGLEDRIVER == false || (INTERFACE_SINGLEDRIVER == true && singleDriverController == 0)) {
 			controlWorking = controlDriver;
