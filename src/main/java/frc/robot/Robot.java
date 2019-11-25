@@ -400,7 +400,7 @@ public class Robot extends TimedRobot {
 	 * (eliminates flipped orientations, stacked setpoints, etc.)
 	 */
 	public void resetAllWheels() {
-		for (int i=0;i<=3;i++) {
+		for (int i = 0; i <= 3; i++) {
 			wheel[i].reset();
 		}
 	}
@@ -410,7 +410,7 @@ public class Robot extends TimedRobot {
 	 * @param val is the value to set all the wheels to
 	 */
 	public void setAllWheels(double val) {
-		for (int i=0;i<=3;i++) {
+		for (int i = 0; i <= 3; i ++) {
 			motorDrive[i].set(val * wheel[i].getFlip());
 		}
 	}
