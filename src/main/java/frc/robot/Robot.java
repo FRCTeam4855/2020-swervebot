@@ -239,7 +239,7 @@ public class Robot extends TimedRobot {
 			if (controlWorking.getRawButton(BUTTON_X)) {
 				resetAllWheels();
 				setAllPIDSetpoints(PIDdrive, 0);
-      }
+      		}
       
 			// Toggle driver-oriented control
 			if (controlWorking.getRawButtonPressed(BUTTON_A)) {
@@ -260,10 +260,10 @@ public class Robot extends TimedRobot {
 				}
 			}
 			if (emergencyReadjust) readjust();
-    }
+    	}
 
-    // End DRIVER CONTROL
-    // Begin OPERATOR DRIVING
+		// End DRIVER CONTROL
+		// Begin OPERATOR DRIVING
 
 		if (INTERFACE_SINGLEDRIVER == false || (INTERFACE_SINGLEDRIVER == true && singleDriverController == 1)) {
 			if (INTERFACE_SINGLEDRIVER == false) controlWorking = controlOperator; else controlWorking = controlDriver;
