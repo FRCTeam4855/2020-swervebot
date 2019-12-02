@@ -8,7 +8,7 @@ package frc.robot;
 import edu.wpi.first.wpilibj.Encoder;
 
 public class Wheel {
-	private double angleCalc = 0,flip = 0,flipCorrection = 0,anglePrevious = 0;
+	private double angleCalc = 0, flip = 0, flipCorrection = 0, anglePrevious = 0;
 	boolean lockFlip = false;	// strictly for the 2018 auto program
 	final double ETD = 1.158333; //ENCODER TO DEGREES
 	Encoder encoder;
@@ -26,16 +26,16 @@ public class Wheel {
 	 */
 	public double calculateWheelAngle(double dL1, double dL2) {
 		
-		angleCalc = -(Math.atan2(dL1,dL2)*180/Math.PI)*ETD;	// DON'T TOUCH THIS
+		angleCalc = -(Math.atan2(dL1, dL2) * 180 / Math.PI) * ETD;	// DON'T TOUCH THIS
 		//if (angleCalc == 0) angleCalc = anglePrevious;	// if the angled is 0, set the angle to whatever the last one was
 		
 		angleCalc += flipCorrection + flip;
 		
 		
 		// If the wheel needs to turn more than 180 degrees to reach the target, flip input
-		if (Math.abs(encoder.get()-angleCalc) > 90*ETD && Math.abs(encoder.get()-angleCalc) < 270*ETD) {
+		if (Math.abs(encoder.get() - angleCalc) > 90 * ETD && Math.abs(encoder.get() - angleCalc) < 270 * ETD) {
 			angleCalc -= flip;
-			if (flip==0) flip=180*ETD; else flip=0;
+			if (flip == 0) flip = 180 * ETD; else flip = 0;
 			angleCalc += flip;
 		}
 		

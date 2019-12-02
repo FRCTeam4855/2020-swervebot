@@ -101,7 +101,7 @@ public class Robot extends TimedRobot {
 	Joystick controlWorking;  							// the controller currently being read from, usually used just for one-driver control
 	
 	// NavX Constructor
-	static AHRS ahrs = new AHRS(SPI.Port.kMXP);
+	private static AHRS ahrs = new AHRS(SPI.Port.kMXP);
 	
 	// All motors
 	static Spark motorAngle[] = { // Directional motors
@@ -206,31 +206,7 @@ public class Robot extends TimedRobot {
 			controlWorking = controlDriver;
 			
 			// Drive the robot
-			if (!emergencyTank) {
-				if (!emergencyReadjust && (!controlWorking.getRawButton(BUTTON_LSTICK) && !controlWorking.getRawButton(BUTTON_RSTICK))) {
-					// Drive the robot, will adjust driverOriented based on toggled input
-					jFwd = -controlWorking.getRawAxis(1);if (Math.abs(jFwd) < CONTROL_DEADZONE) jFwd = 0;
-					if (!controlWorking.getRawButton(BUTTON_RB) && controlWorking.getRawAxis(2) < .7) jFwd *= CONTROL_SPEEDREDUCTION;
-					if (controlWorking.getRawAxis(2) >= .7) jFwd /= CONTROL_SPEEDREDUCTION_PRECISION;
-
-					jStr = controlWorking.getRawAxis(0);if (Math.abs(jStr) < CONTROL_DEADZONE) jStr = 0;
-					if (!controlWorking.getRawButton(BUTTON_RB) && controlWorking.getRawAxis(2) < .7) jStr *= CONTROL_SPEEDREDUCTION;
-					if (controlWorking.getRawAxis(2) >= .7) jStr /= CONTROL_SPEEDREDUCTION_PRECISION;
-
-					jRcw = controlWorking.getRawAxis(4);if (Math.abs(jRcw) < CONTROL_DEADZONE) jRcw = 0;
-					if (!controlWorking.getRawButton(BUTTON_RB) && controlWorking.getRawAxis(2) < .7) jRcw *= CONTROL_SPEEDREDUCTION;
-					if (controlWorking.getRawAxis(2) >= .7) jRcw /= CONTROL_SPEEDREDUCTION_PRECISION;
-
-					if (reverseRotate) {jRcw=-jRcw;}
-					//if (jFwd != 0 && jStr != 0 && jRcw != 0) swerve(jFwd,jStr,jRcw,driverOriented); // the conditional here made the wheels NOT turn to 0,0,0
-					swerve(jFwd,jStr,jRcw,driverOriented);
-				}
-			} else {
-				setAllPIDSetpoints(PIDdrive, 0);
-				resetAllWheels();
-				motorDrive[0].set(controlWorking.getRawAxis(5));motorDrive[3].set(controlWorking.getRawAxis(5));
-				motorDrive[2].set(controlWorking.getRawAxis(1));motorDrive[1].set(controlWorking.getRawAxis(1));
-			}
+			drive();
 			
 			// Reset the gyroscope
 			if (controlWorking.getRawButton(BUTTON_Y)) ahrs.reset();
@@ -332,6 +308,37 @@ public class Robot extends TimedRobot {
 		if (controlDriver.getRawAxis(2) > .09) motorDrive[wheelTune].set(controlDriver.getRawAxis(2) / 2);
 		else if (controlDriver.getRawAxis(3) > .09) motorDrive[wheelTune].set(-controlDriver.getRawAxis(3) / 2);
 		else motorDrive[wheelTune].set(0);
+	}
+
+	/**
+	 * Drives the robot. If emergency tank mode is enabled, then the swerve wheels will behave as two pairs of tank wheels.
+	 */
+	public void drive() {
+		if (!emergencyTank) {
+			if (!emergencyReadjust && (!controlWorking.getRawButton(BUTTON_LSTICK) && !controlWorking.getRawButton(BUTTON_RSTICK))) {
+				// Drive the robot, will adjust driverOriented based on toggled input
+				jFwd = -controlWorking.getRawAxis(1);if (Math.abs(jFwd) < CONTROL_DEADZONE) jFwd = 0;
+				if (!controlWorking.getRawButton(BUTTON_RB) && controlWorking.getRawAxis(2) < .7) jFwd *= CONTROL_SPEEDREDUCTION;
+				if (controlWorking.getRawAxis(2) >= .7) jFwd /= CONTROL_SPEEDREDUCTION_PRECISION;
+
+				jStr = controlWorking.getRawAxis(0);if (Math.abs(jStr) < CONTROL_DEADZONE) jStr = 0;
+				if (!controlWorking.getRawButton(BUTTON_RB) && controlWorking.getRawAxis(2) < .7) jStr *= CONTROL_SPEEDREDUCTION;
+				if (controlWorking.getRawAxis(2) >= .7) jStr /= CONTROL_SPEEDREDUCTION_PRECISION;
+
+				jRcw = controlWorking.getRawAxis(4);if (Math.abs(jRcw) < CONTROL_DEADZONE) jRcw = 0;
+				if (!controlWorking.getRawButton(BUTTON_RB) && controlWorking.getRawAxis(2) < .7) jRcw *= CONTROL_SPEEDREDUCTION;
+				if (controlWorking.getRawAxis(2) >= .7) jRcw /= CONTROL_SPEEDREDUCTION_PRECISION;
+
+				if (reverseRotate) {jRcw=-jRcw;}
+				//if (jFwd != 0 && jStr != 0 && jRcw != 0) swerve(jFwd,jStr,jRcw,driverOriented); // the conditional here made the wheels NOT turn to 0,0,0
+				swerve(jFwd,jStr,jRcw,driverOriented);
+			}
+		} else {
+			setAllPIDSetpoints(PIDdrive, 0);
+			resetAllWheels();
+			motorDrive[0].set(controlWorking.getRawAxis(5));motorDrive[3].set(controlWorking.getRawAxis(5));
+			motorDrive[2].set(controlWorking.getRawAxis(1));motorDrive[1].set(controlWorking.getRawAxis(1));
+		}
 	}
 
 	/**
