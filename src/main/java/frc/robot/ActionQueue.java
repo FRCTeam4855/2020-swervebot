@@ -23,6 +23,7 @@ public class ActionQueue {
 	
 	int queueMaxTime = -1;					// largest end time in queue
 	int queueLength = 0;					// queue length
+	
 	/**
 	 * Feeds the queue a new command. Commands can be assigned in any order.
 	 * @param action the action ID to feed
@@ -96,10 +97,10 @@ public class ActionQueue {
                 // Run a certain action. Parameters will be shipped to the robot class along with the command.
                 switch (queueListActions[i]) {
                     case PREPARE_TURN:
-                        Robot.queuePrepare_Turn(queueListTimeEnd[i],queueListParam1[i],queueListParam2[i]);
+                        ActionQueueHandler.queuePrepare_Turn(queueListTimeEnd[i],queueListParam1[i],queueListParam2[i]);
                         break;
                     case SWERVE:
-                        Robot.queueSwerve(queueListTimeEnd[i],queueListParam1[i],queueListParam2[i],queueListParam3[i]);
+                        ActionQueueHandler.queueSwerve(queueListTimeEnd[i],queueListParam1[i],queueListParam2[i],queueListParam3[i]);
 						break;
 					default:
                         break;

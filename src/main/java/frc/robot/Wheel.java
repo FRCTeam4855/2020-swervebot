@@ -6,15 +6,26 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.Encoder;
+import edu.wpi.first.wpilibj.Spark;
 
 public class Wheel {
-	private double angleCalc = 0, flip = 0, flipCorrection = 0, anglePrevious = 0;
-	boolean lockFlip = false;	// strictly for the 2018 auto program
-	final double ETD = 1.158333; //ENCODER TO DEGREES
-	Encoder encoder;
-	
-	public Wheel(Encoder e) {
-		encoder = e;
+	private double angleCalc = 0, flip = 0, flipCorrection = 0, anglePrevious = 0;	// calculation variables for swerve angles
+	private boolean lockFlip = false;												// strictly for the 2018 auto program
+	public Encoder encoderAngle;													// the encoder object for this instance of the wheel
+	public Spark motorAngle;														// the motor controller that drives the angular motor of the wheel
+	public Spark motorDrive;														// the motor controller that drives the rotational motor of the wheel
+	final private double ETD = Robot.ENC_TO_DEG; 									// encoder to degrees
+
+	/**
+	 * Creates a new wheel instance. There should only be four of these
+	 * @param e an encoder instance for this module
+	 * @param a the motor controller that controls the angle of the wheel
+	 * @param d the motor control that controls the direction of the wheel
+	 */
+	public Wheel(Encoder e, Spark a, Spark d) {
+		encoderAngle = e;
+		motorAngle = a;
+		motorDrive = d;
 	}
 	
 	/**
@@ -33,12 +44,15 @@ public class Wheel {
 		
 		
 		// If the wheel needs to turn more than 180 degrees to reach the target, flip input
-		if (Math.abs(encoder.get() - angleCalc) > 90 * ETD && Math.abs(encoder.get() - angleCalc) < 270 * ETD) {
+		if (Math.abs(encoderAngle.get() - angleCalc) > 90 * ETD && Math.abs(encoderAngle.get() - angleCalc) < 270 * ETD) {
 			angleCalc -= flip;
-			if (flip == 0) flip = 180 * ETD; else flip = 0;
+			if (flip == 0)
+				flip = 180 * ETD;
+			else
+				flip = 0;
 			angleCalc += flip;
 		}
-		
+
 		// This is just for autonomous rotation to angle
 		if (lockFlip) {
 			if (flip != 0) {
@@ -46,13 +60,25 @@ public class Wheel {
 				flip = 0;
 			}
 		}
-		
+
 		// Correct encoder setpoints if they've already flipped a bunch of times
-		
-		if (anglePrevious - angleCalc > 185*ETD) {flipCorrection += 360*ETD;angleCalc += 360*ETD;} //For magnetic encoders, USE 412 (ABS 4048)
-		if (anglePrevious - angleCalc < -185*ETD) {flipCorrection -= 360*ETD;angleCalc -= 360*ETD;}
-		if (encoder.get() - angleCalc > 380*ETD) {flipCorrection += 360*ETD;angleCalc += 360*ETD;}
-		if (encoder.get() - angleCalc < -380*ETD) {flipCorrection -= 360*ETD;angleCalc -= 360*ETD;}
+
+		if (anglePrevious - angleCalc > 185 * ETD) {
+			flipCorrection += 360 * ETD;
+			angleCalc += 360 * ETD;
+		} // For magnetic encoders, USE 412 (ABS 4048)
+		if (anglePrevious - angleCalc < -185 * ETD) {
+			flipCorrection -= 360 * ETD;
+			angleCalc -= 360 * ETD;
+		}
+		if (encoderAngle.get() - angleCalc > 380 * ETD) {
+			flipCorrection += 360 * ETD;
+			angleCalc += 360 * ETD;
+		}
+		if (encoderAngle.get() - angleCalc < -380 * ETD) {
+			flipCorrection -= 360 * ETD;
+			angleCalc -= 360 * ETD;
+		}
 		anglePrevious = angleCalc;
 		return angleCalc;
 	}
