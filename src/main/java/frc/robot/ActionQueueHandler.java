@@ -7,7 +7,7 @@ package frc.robot;
 
 public class ActionQueueHandler {
     private ActionQueue[] queues;
-
+    
     public ActionQueueHandler(ActionQueue[] aq) {
         queues = aq;
     }

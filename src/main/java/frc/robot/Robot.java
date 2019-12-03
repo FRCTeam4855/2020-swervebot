@@ -11,6 +11,7 @@
 // Swerve-bot code: Robot
 
 package frc.robot;
+// package edu.christmas.2012;
 
 import com.kauailabs.navx.frc.AHRS;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -79,20 +80,12 @@ public class Robot extends TimedRobot {
   
 	// DEFINING HARDWARE
 
-	// Magnetic encoders
-	static Encoder encoderAngle[] = {
-		new Encoder(0,1),
-		new Encoder(2,3),
-		new Encoder(6,7),
-		new Encoder(4,5)
-	};
-
 	// Define swerve wheel classes
 	static Wheel wheel[] = {
-		new Wheel(encoderAngle[0], new Spark(3), new Spark(1)),
-		new Wheel(encoderAngle[1], new Spark(7), new Spark(5)),
-		new Wheel(encoderAngle[2], new Spark(6), new Spark(4)),
-		new Wheel(encoderAngle[3], new Spark(2), new Spark(0))
+		new Wheel(new Encoder(0,1), new Spark(3), new Spark(1)),
+		new Wheel(new Encoder(2,3), new Spark(7), new Spark(5)),
+		new Wheel(new Encoder(6,7), new Spark(6), new Spark(4)),
+		new Wheel(new Encoder(4,5), new Spark(2), new Spark(0))
 	};
 	
 	// Xbox controllers
@@ -123,10 +116,6 @@ public class Robot extends TimedRobot {
 	//=======================================
 
 	// End of variable definitions
-	
-	//
-	//	FUNCTIONS
-	//
 
 	/**
 	 * Drives the robot. If emergency tank mode is enabled, then the swerve wheels will behave as two pairs of tank wheels.
@@ -244,7 +233,8 @@ public class Robot extends TimedRobot {
 
 	/**
 	 * Resets all of the SwerveWheel objects, putting them on a clean slate
-	 * (eliminates flipped orientations, stacked setpoints, etc.)
+	 * (eliminates flipped orientations, stacked setpoints, etc.). This doesn't
+	 * actually reset their encoder values; for that, use resetAllEncoders()
 	 */
 	public void resetAllWheels() {
 		for (int i = 0; i <= 3; i++) {
@@ -292,6 +282,15 @@ public class Robot extends TimedRobot {
 	 */
 	public static double proportionalLoop(double p, double currentSensor, double desiredSensor) {
 		return p * (currentSensor - desiredSensor);
+	}
+
+	/**
+	 * Resets the encoders of all the wheel objects, setting all their counts to 0.
+	 */
+	public void resetAllEncoders() {
+		for (Wheel w : wheel) {
+			w.encoderAngle.reset();
+		}
 	}
 
 	// <--- ROBOT INITIALIZATION --->
@@ -345,7 +344,7 @@ public class Robot extends TimedRobot {
 		setAllPIDControllers(PIDdrive, true);
 		wheelSpeedTimer.start();
 		wheelSpeedTimer.reset();
-		encoderAngle[0].reset();encoderAngle[1].reset();encoderAngle[2].reset();encoderAngle[3].reset();
+		resetAllEncoders();
 		resetAllWheels();
 		aqHandler.killQueues();
 		gyro.reset();
@@ -358,6 +357,7 @@ public class Robot extends TimedRobot {
 	@Override
 	public void teleopPeriodic() {
 		// Begin DRIVER CONTROL
+
 		if (INTERFACE_SINGLEDRIVER == false || (INTERFACE_SINGLEDRIVER == true && singleDriverController == 0)) {
 			controlWorking = controlDriver;
 			
@@ -385,7 +385,7 @@ public class Robot extends TimedRobot {
 					setAllPIDControllers(PIDdrive, true);
 					resetAllWheels();
 					setAllPIDSetpoints(PIDdrive, 0);
-					encoderAngle[0].reset();encoderAngle[1].reset();encoderAngle[2].reset();encoderAngle[3].reset();
+					resetAllEncoders();
 				} else {
 					emergencyReadjust = true;
 					setAllPIDControllers(PIDdrive, false);
