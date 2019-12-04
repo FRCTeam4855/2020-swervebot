@@ -5,6 +5,9 @@
 
 package frc.robot;
 
+/**
+ * Runs all ActionQueue instances and is responsible for holding methods that run the robot and holding onto all ActionQueue objects.
+ */
 public class ActionQueueHandler {
     private ActionQueue[] queues;
     
@@ -27,7 +30,7 @@ public class ActionQueueHandler {
 	 */
 	public void runQueues() {
 		for (int i = 0; i < queues.length; i++) {
-			if (queues[i].queueIsRunning == true) queues[i].queueRun();
+			if (queues[i].queueRunning() == true) queues[i].queueRun();
 		}
 	}
 

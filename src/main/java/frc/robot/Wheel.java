@@ -8,6 +8,9 @@ package frc.robot;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Spark;
 
+/**
+ * A single, physical wheel. It contains attributes that aid in its calculation of angles and its motor controllers.
+ */
 public class Wheel {
 	private double angleCalc = 0, flip = 0, flipCorrection = 0, anglePrevious = 0;	// calculation variables for swerve angles
 	private boolean lockFlip = false;												// strictly for the 2018 auto program

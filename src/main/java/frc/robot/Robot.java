@@ -34,7 +34,7 @@ public class Robot extends TimedRobot {
 	final double CONTROL_SPEEDREDUCTION_PRECISION = 3.2;		// teleop drivetrain inputs are divided by this number when precision trigger is engaged
 	final double CONTROL_DEADZONE = 0.21;       			    // minimum value before joystick inputs will be considered on the swerves
 
-	final boolean INTERFACE_SINGLEDRIVER = false;  		  		// whether or not to enable or disable single driver input (press START to switch between controllers)
+	boolean INTERFACE_SINGLEDRIVER = false;  		  			// whether or not to enable or disable single driver input (press START to switch between controllers)
 	//=======================================
 	
 	// OTHER CONSTANTS
@@ -46,17 +46,6 @@ public class Robot extends TimedRobot {
 	final static double ABS_TO_DEG = 11.244444;
 	final static double ENC_360 = 417;
 	final static double IN_TO_ENC = 10.394;
-	// buttons
-	final static int BUTTON_A = 1;
-	final static int BUTTON_B = 2;
-	final static int BUTTON_X = 3;
-	final static int BUTTON_Y = 4;
-	final static int BUTTON_LB = 5;
-	final static int BUTTON_RB = 6;
-	final static int BUTTON_SELECT = 7;
-	final static int BUTTON_START = 8;
-	final static int BUTTON_LSTICK = 9;
-	final static int BUTTON_RSTICK = 10;
 
 	// BEGINNING VARIABLES
 	
@@ -122,18 +111,18 @@ public class Robot extends TimedRobot {
 	 */
 	public void drive() {
 		if (!emergencyTank) {
-			if (!emergencyReadjust && (!controlWorking.getRawButton(BUTTON_LSTICK) && !controlWorking.getRawButton(BUTTON_RSTICK))) {
+			if (!emergencyReadjust && (!controlWorking.getRawButton(Utility.BUTTON_LSTICK) && !controlWorking.getRawButton(Utility.BUTTON_RSTICK))) {
 				// Drive the robot, will adjust driverOriented based on toggled input
 				jFwd = -controlWorking.getRawAxis(1);if (Math.abs(jFwd) < CONTROL_DEADZONE) jFwd = 0;
-				if (!controlWorking.getRawButton(BUTTON_RB) && controlWorking.getRawAxis(2) < .7) jFwd *= CONTROL_SPEEDREDUCTION;
+				if (!controlWorking.getRawButton(Utility.BUTTON_RB) && controlWorking.getRawAxis(2) < .7) jFwd *= CONTROL_SPEEDREDUCTION;
 				if (controlWorking.getRawAxis(2) >= .7) jFwd /= CONTROL_SPEEDREDUCTION_PRECISION;
 
 				jStr = controlWorking.getRawAxis(0);if (Math.abs(jStr) < CONTROL_DEADZONE) jStr = 0;
-				if (!controlWorking.getRawButton(BUTTON_RB) && controlWorking.getRawAxis(2) < .7) jStr *= CONTROL_SPEEDREDUCTION;
+				if (!controlWorking.getRawButton(Utility.BUTTON_RB) && controlWorking.getRawAxis(2) < .7) jStr *= CONTROL_SPEEDREDUCTION;
 				if (controlWorking.getRawAxis(2) >= .7) jStr /= CONTROL_SPEEDREDUCTION_PRECISION;
 
 				jRcw = controlWorking.getRawAxis(4);if (Math.abs(jRcw) < CONTROL_DEADZONE) jRcw = 0;
-				if (!controlWorking.getRawButton(BUTTON_RB) && controlWorking.getRawAxis(2) < .7) jRcw *= CONTROL_SPEEDREDUCTION;
+				if (!controlWorking.getRawButton(Utility.BUTTON_RB) && controlWorking.getRawAxis(2) < .7) jRcw *= CONTROL_SPEEDREDUCTION;
 				if (controlWorking.getRawAxis(2) >= .7) jRcw /= CONTROL_SPEEDREDUCTION_PRECISION;
 
 				if (reverseRotate) {jRcw=-jRcw;}
@@ -275,16 +264,6 @@ public class Robot extends TimedRobot {
 	}
 
 	/**
-	 * Returns a value based on sensor inputs.
-	 * @param p - the proportional constant
-	 * @param currentSensor - whatever your current sensor value is
-	 * @param desiredSensor - whatever you want the sensor to become after change
-	 */
-	public static double proportionalLoop(double p, double currentSensor, double desiredSensor) {
-		return p * (currentSensor - desiredSensor);
-	}
-
-	/**
 	 * Resets the encoders of all the wheel objects, setting all their counts to 0.
 	 */
 	public void resetAllEncoders() {
@@ -365,21 +344,21 @@ public class Robot extends TimedRobot {
 			drive();
 			
 			// Reset the gyroscope
-			if (controlWorking.getRawButton(BUTTON_Y)) gyro.reset();
+			if (controlWorking.getRawButton(Utility.BUTTON_Y)) gyro.reset();
 			
 			// Reset the wheels
-			if (controlWorking.getRawButton(BUTTON_X)) {
+			if (controlWorking.getRawButton(Utility.BUTTON_X)) {
 				resetAllWheels();
 				setAllPIDSetpoints(PIDdrive, 0);
       		}
       
 			// Toggle driver-oriented control
-			if (controlWorking.getRawButtonPressed(BUTTON_A)) {
+			if (controlWorking.getRawButtonPressed(Utility.BUTTON_A)) {
 				if (driverOriented == true) driverOriented = false; else driverOriented = true;
 			}
 
 			// Emergency wheel adjustment mode
-			if (controlWorking.getRawButtonPressed(BUTTON_SELECT) && controlWorking.getRawButtonPressed(BUTTON_START)) {
+			if (controlWorking.getRawButtonPressed(Utility.BUTTON_SELECT) && controlWorking.getRawButtonPressed(Utility.BUTTON_START)) {
 				if (emergencyReadjust) {
 					emergencyReadjust = false;
 					setAllPIDControllers(PIDdrive, true);
@@ -405,7 +384,7 @@ public class Robot extends TimedRobot {
 		// Begin UNIVERSAL FUNCTIONS
 
 		// Toggle drive mode if single driver interface is active
-		if (INTERFACE_SINGLEDRIVER == true && controlDriver.getRawButton(BUTTON_START) == true) {
+		if (INTERFACE_SINGLEDRIVER == true && controlDriver.getRawButton(Utility.BUTTON_START) == true) {
 			if (singleDriverController == 0) singleDriverController = 1; else singleDriverController = 0;
 		}
 		

@@ -5,6 +5,9 @@
 
 package frc.robot;
 
+/**
+ * A single list of commands that are executed by the robot whenever necessary.
+ */
 public class ActionQueue {
 	enum Command {
 		DEAD, PREPARE_TURN, SWERVE;
@@ -18,11 +21,11 @@ public class ActionQueue {
 	double queueListParam2 [] = new double [20];		// parameter 2 for queue item
 	double queueListParam3 [] = new double [20];		// parameter 3 for queue item
 	
-	int queueElapsedTime = 0;				// current elapsed time for this command in code steps (50 steps in 1 second)
-	boolean queueIsRunning = false;			// if queue is enabled or not
+	private int queueElapsedTime = 0;					// current elapsed time for this command in code steps (50 steps in 1 second)
+	private boolean queueIsRunning = false;				// if queue is enabled or not
 	
-	int queueMaxTime = -1;					// largest end time in queue
-	int queueLength = 0;					// queue length
+	private int queueMaxTime = -1;						// largest end time in queue
+	private int queueLength = 0;						// queue length
 	
 	/**
 	 * Feeds the queue a new command. Commands can be assigned in any order.
