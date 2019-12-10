@@ -5,6 +5,7 @@
 
 package frc.robot;
 
+import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Spark;
 
@@ -17,6 +18,7 @@ public class Wheel {
 	public Encoder encoderAngle;													// the encoder object for this instance of the wheel
 	public Spark motorAngle;														// the motor controller that drives the angular motor of the wheel
 	public Spark motorDrive;														// the motor controller that drives the rotational motor of the wheel
+	public AnalogInput zeroSensor;													// the magnetic sensor mounted at the wheel's 0 degree mark
 	final private double ETD = Robot.ENC_TO_DEG; 									// encoder to degrees
 
 	/**
@@ -25,10 +27,11 @@ public class Wheel {
 	 * @param a the motor controller that controls the angle of the wheel
 	 * @param d the motor control that controls the direction of the wheel
 	 */
-	public Wheel(Encoder e, Spark a, Spark d) {
+	public Wheel(Encoder e, Spark a, Spark d, AnalogInput i) {
 		encoderAngle = e;
 		motorAngle = a;
 		motorDrive = d;
+		zeroSensor = i;
 	}
 	
 	/**
