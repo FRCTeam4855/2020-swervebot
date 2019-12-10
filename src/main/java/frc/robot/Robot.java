@@ -14,6 +14,8 @@ package frc.robot;
 // package edu.christmas.2012;
 
 import com.kauailabs.navx.frc.AHRS;
+
+import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Joystick;
@@ -71,10 +73,10 @@ public class Robot extends TimedRobot {
 
 	// Define swerve wheel classes
 	static Wheel wheel[] = {
-		new Wheel(new Encoder(0,1), new Spark(3), new Spark(1)),
-		new Wheel(new Encoder(2,3), new Spark(7), new Spark(5)),
-		new Wheel(new Encoder(6,7), new Spark(6), new Spark(4)),
-		new Wheel(new Encoder(4,5), new Spark(2), new Spark(0))
+		new Wheel(new Encoder(0,1), new Spark(3), new Spark(1), new AnalogInput(0)),
+		new Wheel(new Encoder(2,3), new Spark(7), new Spark(5), new AnalogInput(1)),
+		new Wheel(new Encoder(6,7), new Spark(6), new Spark(4), new AnalogInput(2)),
+		new Wheel(new Encoder(4,5), new Spark(2), new Spark(0), new AnalogInput(3))
 	};
 	
 	// Xbox controllers
@@ -402,7 +404,6 @@ public class Robot extends TimedRobot {
 		SmartDashboard.putNumber("Encoder4:", wheel[3].encoderAngle.get());
 		SmartDashboard.putNumber("YawAxis", gyro.getYaw());
 		SmartDashboard.putBoolean("DriverOriented",driverOriented);
-		SmartDashboard.putNumber("MatchTime",matchTime);
 		
 		// End UNIVERSAL FUNCTIONS
 	}

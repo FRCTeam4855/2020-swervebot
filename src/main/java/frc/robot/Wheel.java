@@ -18,8 +18,9 @@ public class Wheel {
 	public Encoder encoderAngle;													// the encoder object for this instance of the wheel
 	public Spark motorAngle;														// the motor controller that drives the angular motor of the wheel
 	public Spark motorDrive;														// the motor controller that drives the rotational motor of the wheel
-	public AnalogInput zeroSensor;													// the magnetic sensor mounted at the wheel's 0 degree mark
+	private AnalogInput zeroSensor;													// the magnetic sensor mounted at the wheel's 0 degree mark
 	final private double ETD = Robot.ENC_TO_DEG; 									// encoder to degrees
+	private boolean faulty = false;													// whether or not this wheel instance has been flagged for faulty rotational behavior
 
 	/**
 	 * Creates a new wheel instance. There should only be four of these
@@ -97,6 +98,13 @@ public class Wheel {
 		lockFlip = f;
 	}
 	
+	/**
+	 * Returns true if the analog sensor is being tripped and false if not
+	 */
+	public boolean isZero() {
+		return (zeroSensor.getValue() < 140);
+	}
+
 	public void reset() {
 		angleCalc = 0;flip = 0;anglePrevious = 0;flipCorrection = 0;
 	}
