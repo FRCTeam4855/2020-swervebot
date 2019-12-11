@@ -19,7 +19,6 @@ import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.PIDController;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.TimedRobot;
@@ -34,7 +33,8 @@ public class Robot extends TimedRobot {
 	
 	final double CONTROL_SPEEDREDUCTION = .6; 	  			  	// teleop drivetrain inputs are multiplied by this number when turbo is NOT engaged
 	final double CONTROL_SPEEDREDUCTION_PRECISION = 3.2;		// teleop drivetrain inputs are divided by this number when precision trigger is engaged
-	final double CONTROL_DEADZONE = 0.21;       			    // minimum value before joystick inputs will be considered on the swerves
+	final double CONTROL_DEADZONE = 0.20;       			    // minimum value before joystick inputs will be considered on the swerves
+	final boolean CONTROL_AUTOFAULT_HANDLE = false;				// whether or not the robot will automatically react to a faulty wheel and flip to tank drive
 
 	boolean INTERFACE_SINGLEDRIVER = false;  		  			// whether or not to enable or disable single driver input (press START to switch between controllers)
 	//=======================================
@@ -86,18 +86,6 @@ public class Robot extends TimedRobot {
 	
 	// NavX Constructor
 	private static AHRS gyro = new AHRS(SPI.Port.kMXP);
-
-	//=======================================
-	
-	// PID LOOPS AND ROUTINES
-
-	// These control the steering motors using the mers (?? idk what mers is)
-	static PIDController PIDdrive[] = {
-		new PIDController(0.035, 0, 0.01, wheel[0].encoderAngle, wheel[0].motorAngle),
-		new PIDController(0.035, 0, 0.01, wheel[1].encoderAngle, wheel[1].motorAngle),
-		new PIDController(0.035, 0, 0.01, wheel[2].encoderAngle, wheel[2].motorAngle),
-		new PIDController(0.035, 0, 0.01, wheel[3].encoderAngle, wheel[3].motorAngle)
-	};
 	
 	// Action queues
 	ActionQueueHandler aqHandler = new ActionQueueHandler(new ActionQueue[] {new ActionQueue()});
@@ -109,7 +97,7 @@ public class Robot extends TimedRobot {
 	// End of variable definitions
 
 	/**
-	 * Drives the robot. If emergency tank mode is enabled, then the swerve wheels will behave as two pairs of tank wheels.
+	 * Drives the robot and invokes the Wheel method process(). If emergency tank mode is enabled, then the swerve wheels will behave as two pairs of tank wheels.
 	 */
 	public void drive() {
 		if (!emergencyTank) {
@@ -132,10 +120,16 @@ public class Robot extends TimedRobot {
 				swerve(jFwd,jStr,jRcw,driverOriented);
 			}
 		} else {
-			setAllPIDSetpoints(PIDdrive, 0);
+			setAllPIDSetpoints(0);
 			resetAllWheels();
-			wheel[0].motorDrive.set(controlWorking.getRawAxis(5));wheel[3].motorDrive.set(controlWorking.getRawAxis(5));
-			wheel[2].motorDrive.set(controlWorking.getRawAxis(1));wheel[1].motorDrive.set(controlWorking.getRawAxis(1));
+			wheel[0].motorDrive.set(controlWorking.getRawAxis(5));
+			wheel[3].motorDrive.set(controlWorking.getRawAxis(5));
+			wheel[2].motorDrive.set(controlWorking.getRawAxis(1));
+			wheel[1].motorDrive.set(controlWorking.getRawAxis(1));
+		}
+
+		for (Wheel w : wheel) {
+			w.process();
 		}
 	}
 
@@ -167,16 +161,20 @@ public class Robot extends TimedRobot {
 		wheelSpeed4 = Math.sqrt(Math.pow(a, 2) + Math.pow(c, 2));
 
 		encoderSetpointA = wheel[0].calculateWheelAngle(b, c);
-		PIDdrive[0].setSetpoint(encoderSetpointA);SmartDashboard.putNumber("Enc. A setpoint", encoderSetpointA);
+		wheel[0].PID.setSetpoint(encoderSetpointA);
+		SmartDashboard.putNumber("Enc. A setpoint", encoderSetpointA);
 		
 		encoderSetpointB = wheel[1].calculateWheelAngle(b, d);
-		PIDdrive[1].setSetpoint(encoderSetpointB);SmartDashboard.putNumber("Enc. B setpoint", encoderSetpointB);
+		wheel[1].PID.setSetpoint(encoderSetpointB);
+		SmartDashboard.putNumber("Enc. B setpoint", encoderSetpointB);
 		
 		encoderSetpointC = wheel[2].calculateWheelAngle(a, d);
-		PIDdrive[2].setSetpoint(encoderSetpointC);SmartDashboard.putNumber("Enc. C setpoint", encoderSetpointC);
+		wheel[2].PID.setSetpoint(encoderSetpointC);
+		SmartDashboard.putNumber("Enc. C setpoint", encoderSetpointC);
 		
 		encoderSetpointD = wheel[3].calculateWheelAngle(a, c);
-		PIDdrive[3].setSetpoint(encoderSetpointD);SmartDashboard.putNumber("Enc. D setpoint", encoderSetpointD);
+		wheel[3].PID.setSetpoint(encoderSetpointD);
+		SmartDashboard.putNumber("Enc. D setpoint", encoderSetpointD);
 
 		max=wheelSpeed1; if(wheelSpeed2>max)max=wheelSpeed2; if(wheelSpeed3>max)max=wheelSpeed3; if(wheelSpeed4>max)max=wheelSpeed4;
 		if (max > 1) {wheelSpeed1/=max; wheelSpeed2/=max; wheelSpeed3/=max; wheelSpeed4/=max;}
@@ -228,8 +226,8 @@ public class Robot extends TimedRobot {
 	 * actually reset their encoder values; for that, use resetAllEncoders()
 	 */
 	public void resetAllWheels() {
-		for (int i = 0; i <= 3; i++) {
-			wheel[i].reset();
+		for (Wheel w : wheel) {
+			w.reset();
 		}
 	}
 
@@ -238,30 +236,29 @@ public class Robot extends TimedRobot {
 	 * @param val is the value to set all the wheels to
 	 */
 	public void setAllWheels(double val) {
-		for (int i = 0; i <= 3; i ++) {
-			wheel[i].motorDrive.set(val * wheel[i].getFlip());
+		for (Wheel w : wheel) {
+			w.motorDrive.set(val * w.getFlip());
 		}
 	}
 	
 	/**
-	 * Enables or disables a given array of four PIDController objects.
-	 * @param pids The array of PID Controllers to set
+	 * Enables or disables the PIDController objects in the Wheel object array.
 	 * @param enabled True to enable, false to disable
 	 */
-	public void setAllPIDControllers(PIDController[] pids, boolean enabled) {
-		for (int i=0;i<=3;i++) {
-			pids[i].setEnabled(enabled);
+	public void setAllPIDControllers(boolean enabled) {
+		for (Wheel w : wheel) {
+			w.PID.setEnabled(enabled);
 		}
 	}
 
 	/**
-	 * Sets the setpoints for an array of four PIDController objects.
+	 * Sets the setpoints for every Wheel object in the wheel array.
 	 * @param pids The array of PID Controllers to set
 	 * @param setpoint The setpoint
 	 */
-	public void setAllPIDSetpoints(PIDController[] pids, double setpoint) {
-		for (int i=0;i<=3;i++) {
-			pids[i].setSetpoint(setpoint);
+	public void setAllPIDSetpoints(double setpoint) {
+		for (Wheel w : wheel) {
+			w.PID.setSetpoint(setpoint);
 		}
 	}
 
@@ -281,12 +278,6 @@ public class Robot extends TimedRobot {
 	 */
 	@Override
 	public void robotInit() {
-		// Configure swerve wheel PID loops
-		PIDdrive[0].setOutputRange(-1, 1);
-		PIDdrive[1].setOutputRange(-1, 1);
-		PIDdrive[2].setOutputRange(-1, 1);
-		PIDdrive[3].setOutputRange(-1, 1);
-
 		// Feed action queues, they hunger for your command
 		// Test, does basically nothing
 		aqHandler.getQueue(QUEUE_TEST).queueFeed(ActionQueue.Command.SWERVE,1,50,false,.4,0,0);
@@ -296,8 +287,8 @@ public class Robot extends TimedRobot {
 	 * This function is called immediately when the robot is disabled
 	 */
 	public void disabledInit() {
-		setAllPIDControllers(PIDdrive, false);	
-		setAllPIDSetpoints(PIDdrive, 0);
+		setAllPIDControllers(false);	
+		setAllPIDSetpoints(0);
 		aqHandler.killQueues();
 	}
 	
@@ -322,7 +313,7 @@ public class Robot extends TimedRobot {
 	 * This function is called when teleop begins
 	 */
 	public void teleopInit() {
-		setAllPIDControllers(PIDdrive, true);
+		setAllPIDControllers(true);
 		wheelSpeedTimer.start();
 		wheelSpeedTimer.reset();
 		resetAllEncoders();
@@ -351,7 +342,7 @@ public class Robot extends TimedRobot {
 			// Reset the wheels
 			if (controlWorking.getRawButton(Utility.BUTTON_X)) {
 				resetAllWheels();
-				setAllPIDSetpoints(PIDdrive, 0);
+				setAllPIDSetpoints(0);
       		}
       
 			// Toggle driver-oriented control
@@ -363,13 +354,13 @@ public class Robot extends TimedRobot {
 			if (controlWorking.getRawButtonPressed(Utility.BUTTON_SELECT) && controlWorking.getRawButtonPressed(Utility.BUTTON_START)) {
 				if (emergencyReadjust) {
 					emergencyReadjust = false;
-					setAllPIDControllers(PIDdrive, true);
+					setAllPIDControllers(true);
 					resetAllWheels();
-					setAllPIDSetpoints(PIDdrive, 0);
+					setAllPIDSetpoints(0);
 					resetAllEncoders();
 				} else {
 					emergencyReadjust = true;
-					setAllPIDControllers(PIDdrive, false);
+					setAllPIDControllers(false);
 				}
 			}
 			if (emergencyReadjust) readjust();
@@ -413,8 +404,8 @@ public class Robot extends TimedRobot {
 	 */
 	@Override
 	public void testPeriodic() {
-		if (PIDdrive[0].isEnabled()) {
-			setAllPIDControllers(PIDdrive, false);
+		if (wheel[0].PID.isEnabled()) {
+			setAllPIDControllers(false);
 		}
 		
 		SmartDashboard.putNumber("Joystick y axis", controlDriver.getRawAxis(1));
