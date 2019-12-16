@@ -43,7 +43,7 @@ public class Robot extends TimedRobot {
 
 	final static double ROBOT_WIDTH = 29;
 	final static double ROBOT_LENGTH = 29;
-	final static double ROBOT_R = Math.sqrt(Math.pow(ROBOT_LENGTH,2)+Math.pow(ROBOT_WIDTH,2));
+	final static double ROBOT_R = Math.sqrt(Math.pow(ROBOT_LENGTH, 2) + Math.pow(ROBOT_WIDTH, 2));
 	final static double ENC_TO_DEG = 1.158333;
 	final static double ABS_TO_DEG = 11.244444;
 	final static double ENC_360 = 417;
@@ -53,8 +53,8 @@ public class Robot extends TimedRobot {
 	
 	int wheelTune = 0; 							// Remembers what wheel we are tweaking in test mode
 	int singleDriverController = 0; 			// port number of controller to operate
-	boolean emergencyTank = false; 				// True if the robot is in emergency tank drive mode
-	boolean reverseRotate = false;				// ?????
+	boolean emergencyTank = false; 				// true if the robot is in emergency tank drive mode
+	boolean reverseRotate = false;				// can probably get deleted
 	boolean driverOriented = true;				// true = driver oriented, false = robot oriented
 	static double matchTime = 0;				// the calculated match time from the driver station
 	boolean emergencyReadjust = false;			// if hell has come to earth and you need to manually adjust wheels during a match, this will be enabled
@@ -115,11 +115,12 @@ public class Robot extends TimedRobot {
 				if (!controlWorking.getRawButton(Utility.BUTTON_RB) && controlWorking.getRawAxis(2) < .7) jRcw *= CONTROL_SPEEDREDUCTION;
 				if (controlWorking.getRawAxis(2) >= .7) jRcw /= CONTROL_SPEEDREDUCTION_PRECISION;
 
-				if (reverseRotate) {jRcw=-jRcw;}
-				//if (jFwd != 0 && jStr != 0 && jRcw != 0) swerve(jFwd,jStr,jRcw,driverOriented); // the conditional here made the wheels NOT turn to 0,0,0
-				swerve(jFwd,jStr,jRcw,driverOriented);
+				if (reverseRotate) {jRcw = -jRcw;}
+				//if (jFwd != 0 && jStr != 0 && jRcw != 0) swerve(jFwd, jStr, jRcw, driverOriented); // the conditional here made the wheels NOT turn to 0,0,0
+				swerve(jFwd, jStr, jRcw, driverOriented);
 			}
 		} else {
+			// Emergency tank drive
 			setAllPIDSetpoints(0);
 			resetAllWheels();
 			wheel[0].motorDrive.set(controlWorking.getRawAxis(5));
@@ -140,7 +141,7 @@ public class Robot extends TimedRobot {
 	 * @param STR The desired strafing speed of the robot
 	 * @param RCW The desired rotation speed of the robot
 	 */
-	public static void swerve(double FWD,double STR,double RCW,boolean driverOriented) {
+	public static void swerve(double FWD, double STR, double RCW, boolean driverOriented) {
 		if (driverOriented) {
 			rads = gyro.getYaw() * Math.PI / 180;
 			temp = FWD * Math.cos(rads) + STR * Math.sin(rads);
@@ -176,16 +177,17 @@ public class Robot extends TimedRobot {
 		wheel[3].PID.setSetpoint(encoderSetpointD);
 		SmartDashboard.putNumber("Enc. D setpoint", encoderSetpointD);
 
-		max=wheelSpeed1; if(wheelSpeed2>max)max=wheelSpeed2; if(wheelSpeed3>max)max=wheelSpeed3; if(wheelSpeed4>max)max=wheelSpeed4;
-		if (max > 1) {wheelSpeed1/=max; wheelSpeed2/=max; wheelSpeed3/=max; wheelSpeed4/=max;}
+		// If a wheel calculated itself to a value above 1, reduce all wheel speeds
+		// TODO play with these lines of code. Try setting each wheel speed to Math.max(wheelSpeed, 1) instead
+		max = Math.max(wheelSpeed1, Math.max(wheelSpeed2, Math.max(wheelSpeed3, wheelSpeed4)));
+		if (max > 1) {wheelSpeed1 /= max; wheelSpeed2 /= max; wheelSpeed3 /= max; wheelSpeed4 /= max;}
 		
 		wheelSpeed1 *= wheel[0].getFlip();
 		wheelSpeed2 *= wheel[1].getFlip();
 		wheelSpeed3 *= wheel[2].getFlip();
 		wheelSpeed4 *= wheel[3].getFlip();
 		
-		//Move[2].set(testStick.getRawAxis(1));
-		
+		// Tween wheel speeds
 		if (wheelSpeedTimer.get() > 0.1) {
 			if (wheelSpeed1 - wheelSpeedActual1 > 0.1) {wheelSpeedActual1 += 0.1;} else if (wheelSpeed1 - wheelSpeedActual1 < -0.1) {wheelSpeedActual1 -= 0.1;} else {wheelSpeedActual1 = wheelSpeed1;}
 			if (wheelSpeed2 - wheelSpeedActual2 > 0.1) {wheelSpeedActual2 += 0.1;} else if (wheelSpeed2 - wheelSpeedActual2 < -0.1) {wheelSpeedActual2 -= 0.1;} else {wheelSpeedActual2 = wheelSpeed2;}
@@ -193,12 +195,11 @@ public class Robot extends TimedRobot {
 			if (wheelSpeed4 - wheelSpeedActual4 > 0.1) {wheelSpeedActual4 += 0.1;} else if (wheelSpeed4 - wheelSpeedActual4 < -0.1) {wheelSpeedActual4 -= 0.1;} else {wheelSpeedActual4 = wheelSpeed4;}
 			wheelSpeedTimer.reset();
 		}
-		//Move[0].set(wsActual1);Move[1].set(wsActual2);Move[2].set(wsActual3);Move[3].set(wsActual4);
 		
-		wheel[0].motorDrive.set(wheelSpeed1);
-		wheel[1].motorDrive.set(wheelSpeed2);
-		wheel[2].motorDrive.set(wheelSpeed3);
-		wheel[3].motorDrive.set(wheelSpeed4);
+		wheel[0].motorDrive.set(wheelSpeedActual1);
+		wheel[1].motorDrive.set(wheelSpeedActual2);
+		wheel[2].motorDrive.set(wheelSpeedActual3);
+		wheel[3].motorDrive.set(wheelSpeedActual4);
 	}
 
 	/**
@@ -364,6 +365,11 @@ public class Robot extends TimedRobot {
 				}
 			}
 			if (emergencyReadjust) readjust();
+
+			// Emergency tank drive mode
+			if (controlWorking.getRawButton(Utility.BUTTON_LSTICK) && controlWorking.getRawButton(Utility.BUTTON_RSTICK)) {
+				emergencyTank = !emergencyTank;
+			}
     	}
 
 		// End DRIVER CONTROL

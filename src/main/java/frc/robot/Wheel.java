@@ -99,7 +99,7 @@ public class Wheel {
 	}
 	
 	public int getFlip() {
-		if (flip==0) return 1; else return -1;
+		if (flip == 0) return 1; else return -1;
 	}
 	
 	public void lockFlip(boolean f) {
@@ -110,7 +110,10 @@ public class Wheel {
 	 * Resets the calculation properties of the wheel. Also tells the wheel that it has not performed any flips
 	 */
 	public void reset() {
-		angleCalc = 0;flip = 0;anglePrevious = 0;flipCorrection = 0;
+		angleCalc = 0;
+		flip = 0;
+		anglePrevious = 0;
+		flipCorrection = 0;
 	}
 
 	/**
@@ -176,7 +179,7 @@ public class Wheel {
 					encoderAngle.reset();
 				}
 			} else {
-				motorAngle.set(.6);
+				motorAngle.set(1);
 			}
 		}
 
