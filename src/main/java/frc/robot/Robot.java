@@ -162,19 +162,19 @@ public class Robot extends TimedRobot {
 		wheelSpeed4 = Math.sqrt(Math.pow(a, 2) + Math.pow(c, 2));
 
 		encoderSetpointA = wheel[0].calculateWheelAngle(b, c);
-		wheel[0].PID.setSetpoint(encoderSetpointA);
+		wheel[0].setSetpoint(encoderSetpointA);
 		SmartDashboard.putNumber("Enc. A setpoint", encoderSetpointA);
 		
 		encoderSetpointB = wheel[1].calculateWheelAngle(b, d);
-		wheel[1].PID.setSetpoint(encoderSetpointB);
+		wheel[1].setSetpoint(encoderSetpointB);
 		SmartDashboard.putNumber("Enc. B setpoint", encoderSetpointB);
 		
 		encoderSetpointC = wheel[2].calculateWheelAngle(a, d);
-		wheel[2].PID.setSetpoint(encoderSetpointC);
+		wheel[2].setSetpoint(encoderSetpointC);
 		SmartDashboard.putNumber("Enc. C setpoint", encoderSetpointC);
 		
 		encoderSetpointD = wheel[3].calculateWheelAngle(a, c);
-		wheel[3].PID.setSetpoint(encoderSetpointD);
+		wheel[3].setSetpoint(encoderSetpointD);
 		SmartDashboard.putNumber("Enc. D setpoint", encoderSetpointD);
 
 		// If a wheel calculated itself to a value above 1, reduce all wheel speeds
@@ -243,12 +243,12 @@ public class Robot extends TimedRobot {
 	}
 	
 	/**
-	 * Enables or disables the PIDController objects in the Wheel object array.
+	 * Turns on and off each of the robot's Wheel objects.
 	 * @param enabled True to enable, false to disable
 	 */
 	public void setAllPIDControllers(boolean enabled) {
 		for (Wheel w : wheel) {
-			w.PID.setEnabled(enabled);
+			if (enabled) w.turnOn(); else w.turnOff();
 		}
 	}
 
@@ -259,7 +259,7 @@ public class Robot extends TimedRobot {
 	 */
 	public void setAllPIDSetpoints(double setpoint) {
 		for (Wheel w : wheel) {
-			w.PID.setSetpoint(setpoint);
+			w.setSetpoint(setpoint);
 		}
 	}
 
@@ -410,9 +410,6 @@ public class Robot extends TimedRobot {
 	 */
 	@Override
 	public void testPeriodic() {
-		if (wheel[0].PID.isEnabled()) {
-			setAllPIDControllers(false);
-		}
 		
 		SmartDashboard.putNumber("Joystick y axis", controlDriver.getRawAxis(1));
 		

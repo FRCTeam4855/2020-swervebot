@@ -7,7 +7,8 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Encoder;
-import edu.wpi.first.wpilibj.PIDController;
+import edu.wpi.first.wpilibj.controller.PIDController;
+import edu.wpi.first.wpiutil.math.MathUtil;
 import edu.wpi.first.wpilibj.Spark;
 
 /**
@@ -21,6 +22,8 @@ public class Wheel {
 	public PIDController PID;														// the specific PID controller for this wheel's angular motion
 
 	final private double ETD = Robot.ENC_TO_DEG; 									// encoder to degrees
+	private double setpoint = 0;													// the setpoint of the angular encoder
+	private boolean on = false;														// whether or not the wheel is "active" and responding to control
 	private double angleCalc = 0, flip = 0, flipCorrection = 0, anglePrevious = 0;	// calculation variables for swerve angles
 	private boolean lockFlip = false;												// strictly for the 2018 auto program
 	private boolean settingToZero = false;											// flag for whether or not the wheel is currently trying to find its zero
@@ -40,8 +43,8 @@ public class Wheel {
 		motorAngle = a;
 		motorDrive = d;
 		zeroSensor = i;
-		PID = new PIDController(0.035, 0, 0.01, encoderAngle, motorAngle);
-		PID.setOutputRange(-1, 1);
+		PID = new PIDController(0.035, 0, 0.01);	// uses encoderAngle to set motorAngle
+		//PID.setOutputRange(-1, 1);				// clamp must now be completed manually
 	}
 	
 	/**
@@ -164,6 +167,35 @@ public class Wheel {
 	}
 
 	/**
+	 * Returns the setpoint of the angular motor.
+	 */
+	public double getSetpoint() {
+		return setpoint;
+	}
+
+	/**
+	 * Sets the setpoint of the angular motor.
+	 * @param s The new setpoint in encoder units
+	 */
+	public void setSetpoint(double s) {
+		setpoint = s;
+	}
+
+	/**
+	 * Turns the wheel on, making the PIDController's calculate() method run.
+	 */
+	public void turnOn() {
+		on = true;
+	}
+
+	/**
+	 * Turns the wheel off, preventing encoder setpoints from moving the wheel.
+	 */
+	public void turnOff() {
+		on = false;
+	}
+
+	/**
 	 * This function should run constantly while the robot is enabled. Spins the wheel when setToZero() has been called and
 	 * runs checks to ensure the wheel is not exhibiting faulty behavior. This function also outputs diagnostic information to
 	 * the SmartDashboard.
@@ -184,7 +216,7 @@ public class Wheel {
 		}
 
 		// Check for faulty status, encoder should read a constant 0 if it is failing
-		if (Math.abs(PID.getSetpoint()) > 20 && encoderAngle.get() == 0) {
+		if (Math.abs(getSetpoint()) > 20 && encoderAngle.get() == 0) {
 			// Begin counting
 			faultySetpointTimer ++;
 			if (faultySetpointTimer > 120) {
@@ -194,13 +226,20 @@ public class Wheel {
 		} else {
 			faultySetpointTimer = -1;
 		}
-
+		
 		// Make sure the wheel is locked at zero
 		if (lockAtZero) {
 			if (faulty && !isZero()) {
 				setToZero(true);
 			}
-			PID.setSetpoint(0);
+			setSetpoint(0);
+		}
+
+		// Turn the wheels based on encoder input
+		if (on) {
+			double calc = PID.calculate(encoderAngle.get(), setpoint);
+			calc = MathUtil.clamp(calc, -1, 1);
+			motorAngle.set(PID.calculate(encoderAngle.get(), setpoint));
 		}
 
 		// TODO SmartDashboard output
