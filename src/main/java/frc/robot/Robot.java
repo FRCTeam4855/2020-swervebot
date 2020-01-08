@@ -13,6 +13,9 @@
 package frc.robot;
 // package edu.christmas.2012;
 
+import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.can.TalonSRX;
+import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 import com.kauailabs.navx.frc.AHRS;
 
 import edu.wpi.first.wpilibj.AnalogInput;
@@ -73,10 +76,10 @@ public class Robot extends TimedRobot {
 
 	// Define swerve wheel classes
 	static Wheel wheel[] = {
-		new Wheel(new Encoder(0,1), new Spark(3), new Spark(1), new AnalogInput(0)),
-		new Wheel(new Encoder(2,3), new Spark(7), new Spark(5), new AnalogInput(1)),
-		new Wheel(new Encoder(6,7), new Spark(6), new Spark(4), new AnalogInput(2)),
-		new Wheel(new Encoder(4,5), new Spark(2), new Spark(0), new AnalogInput(3))
+		new Wheel(new Encoder(0,1), new TalonSRX(0), new VictorSPX(5), new AnalogInput(0)),// front left
+		new Wheel(new Encoder(2,3), new TalonSRX(1), new VictorSPX(6), new AnalogInput(1)),// front right
+		new Wheel(new Encoder(6,7), new TalonSRX(2), new VictorSPX(7), new AnalogInput(2)),// back left
+		new Wheel(new Encoder(4,5), new TalonSRX(3), new VictorSPX(8), new AnalogInput(3))// back right
 	};
 	
 	// Xbox controllers
@@ -123,10 +126,10 @@ public class Robot extends TimedRobot {
 			// Emergency tank drive
 			setAllPIDSetpoints(0);
 			resetAllWheels();
-			wheel[0].motorDrive.set(controlWorking.getRawAxis(5));
-			wheel[3].motorDrive.set(controlWorking.getRawAxis(5));
-			wheel[2].motorDrive.set(controlWorking.getRawAxis(1));
-			wheel[1].motorDrive.set(controlWorking.getRawAxis(1));
+			wheel[0].motorDrive.set(ControlMode.PercentOutput, controlWorking.getRawAxis(5));
+			wheel[3].motorDrive.set(ControlMode.PercentOutput, controlWorking.getRawAxis(5));
+			wheel[2].motorDrive.set(ControlMode.PercentOutput, controlWorking.getRawAxis(1));
+			wheel[1].motorDrive.set(ControlMode.PercentOutput, controlWorking.getRawAxis(1));
 		}
 
 		for (Wheel w : wheel) {
@@ -196,10 +199,10 @@ public class Robot extends TimedRobot {
 			wheelSpeedTimer.reset();
 		}
 		
-		wheel[0].motorDrive.set(wheelSpeedActual1);
-		wheel[1].motorDrive.set(wheelSpeedActual2);
-		wheel[2].motorDrive.set(wheelSpeedActual3);
-		wheel[3].motorDrive.set(wheelSpeedActual4);
+		wheel[0].motorDrive.set(ControlMode.PercentOutput, wheelSpeedActual1);
+		wheel[1].motorDrive.set(ControlMode.PercentOutput, wheelSpeedActual2);
+		wheel[2].motorDrive.set(ControlMode.PercentOutput, wheelSpeedActual3);
+		wheel[3].motorDrive.set(ControlMode.PercentOutput, wheelSpeedActual4);
 	}
 
 	/**
@@ -212,13 +215,13 @@ public class Robot extends TimedRobot {
 		if (controlDriver.getRawButton(4)) wheelTune = 3;
 		
 		// Adjust wheel angle
-		if (controlDriver.getRawButton(5)) wheel[wheelTune].motorAngle.set(0.3);
-		else if (controlDriver.getRawButton(6)) wheel[wheelTune].motorAngle.set(-0.3); else wheel[wheelTune].motorAngle.set(0);
+		if (controlDriver.getRawButton(5)) wheel[wheelTune].motorAngle.set(ControlMode.PercentOutput, 0.3);
+		else if (controlDriver.getRawButton(6)) wheel[wheelTune].motorAngle.set(ControlMode.PercentOutput, -0.3); else wheel[wheelTune].motorAngle.set(ControlMode.PercentOutput, 0);
 		
 		// Spin wheels
-		if (controlDriver.getRawAxis(2) > .09) wheel[wheelTune].motorDrive.set(controlDriver.getRawAxis(2) / 2);
-		else if (controlDriver.getRawAxis(3) > .09) wheel[wheelTune].motorDrive.set(-controlDriver.getRawAxis(3) / 2);
-		else wheel[wheelTune].motorDrive.set(0);
+		if (controlDriver.getRawAxis(2) > .09) wheel[wheelTune].motorDrive.set(ControlMode.PercentOutput, controlDriver.getRawAxis(2) / 2);
+		else if (controlDriver.getRawAxis(3) > .09) wheel[wheelTune].motorDrive.set(ControlMode.PercentOutput, -controlDriver.getRawAxis(3) / 2);
+		else wheel[wheelTune].motorDrive.set(ControlMode.PercentOutput, 0);
 	}
 
 	/**
@@ -238,7 +241,7 @@ public class Robot extends TimedRobot {
 	 */
 	public void setAllWheels(double val) {
 		for (Wheel w : wheel) {
-			w.motorDrive.set(val * w.getFlip());
+			w.motorDrive.set(ControlMode.PercentOutput, val * w.getFlip());
 		}
 	}
 	

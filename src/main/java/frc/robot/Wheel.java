@@ -5,6 +5,10 @@
 
 package frc.robot;
 
+import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.can.TalonSRX;
+import com.ctre.phoenix.motorcontrol.can.VictorSPX;
+
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.controller.PIDController;
@@ -16,8 +20,8 @@ import edu.wpi.first.wpilibj.Spark;
  */
 public class Wheel {
 	public Encoder encoderAngle;													// the encoder object for this instance of the wheel
-	public Spark motorAngle;														// the motor controller that drives the angular motor of the wheel
-	public Spark motorDrive;														// the motor controller that drives the rotational motor of the wheel
+	public TalonSRX motorAngle;														// the motor controller that drives the angular motor of the wheel
+	public VictorSPX motorDrive;														// the motor controller that drives the rotational motor of the wheel
 	private AnalogInput zeroSensor;													// the magnetic sensor mounted at the wheel's 0 degree mark
 	public PIDController PID;														// the specific PID controller for this wheel's angular motion
 
@@ -38,7 +42,7 @@ public class Wheel {
 	 * @param a the motor controller that controls the angle of the wheel
 	 * @param d the motor control that controls the direction of the wheel
 	 */
-	public Wheel(Encoder e, Spark a, Spark d, AnalogInput i) {
+	public Wheel(Encoder e, TalonSRX a, VictorSPX d, AnalogInput i) {
 		encoderAngle = e;
 		motorAngle = a;
 		motorDrive = d;
@@ -205,13 +209,13 @@ public class Wheel {
 		if (settingToZero) {
 			if (isZero()) {
 				settingToZero = false;
-				motorAngle.set(0);
+				motorAngle.set(ControlMode.PercentOutput, 0);
 				if (settingToZeroReset) {
 					reset();
 					encoderAngle.reset();
 				}
 			} else {
-				motorAngle.set(1);
+				motorAngle.set(ControlMode.PercentOutput, 1);
 			}
 		}
 
@@ -239,7 +243,7 @@ public class Wheel {
 		if (on) {
 			double calc = PID.calculate(encoderAngle.get(), setpoint);
 			calc = MathUtil.clamp(calc, -1, 1);
-			motorAngle.set(PID.calculate(encoderAngle.get(), setpoint));
+			motorAngle.set(ControlMode.PercentOutput, PID.calculate(encoderAngle.get(), setpoint));
 		}
 
 		// TODO SmartDashboard output
