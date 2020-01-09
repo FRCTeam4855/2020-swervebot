@@ -10,7 +10,7 @@ package frc.robot;
  */
 public class ActionQueue {
 	enum Command {
-		DEAD, PREPARE_TURN, SWERVE;
+		DEAD, PREPARE_TURN, SWERVE, SHOOT_LOW, SHOOT_HIGH;
 	}
 	
 	Command queueListActions [] = new Command [20];		// action ID to perform

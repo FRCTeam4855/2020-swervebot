@@ -30,4 +30,63 @@ public class Utility {
 	public static double proportionalLoop(double p, double currentSensor, double desiredSensor) {
 		return p * (currentSensor - desiredSensor);
 	}
+
+	/**
+	 * Resets all of the SwerveWheel objects, putting them on a clean slate
+	 * (eliminates flipped orientations, stacked setpoints, etc.). This doesn't
+	 * actually reset their encoder values; for that, use resetAllEncoders()
+	 */
+	public static void resetAllWheels(Wheel[] wheel) {
+		for (Wheel w : wheel) {
+			w.reset();
+		}
+	}
+	
+	/**
+	 * Calibrates each wheel using its analog sensor.
+	 */
+	public static void zeroAllWheelsWithAnalog(Wheel[] wheel) {
+		for (Wheel w : wheel) {
+			w.setToZero(true);
+		}
+	}
+
+	/**
+	 * Turns on and off each of the robot's Wheel objects.
+	 * @param enabled True to enable, false to disable
+	 */
+	public static void powerAllWheels(boolean enabled, Wheel[] wheel) {
+		for (Wheel w : wheel) {
+			if (enabled) w.turnOn(); else w.turnOff();
+		}
+	}
+
+	/**
+	 * Turns on each wheel with a clean slate. The encoder is reset, the math is reset, and all motors are shut off before starting up.
+	 */
+	public static void cleanSlateAllWheels(Wheel[] wheel) {
+		for (Wheel w : wheel) {
+			w.turnOnCleanSlate();
+		}
+	}
+
+	/**
+	 * Sets the setpoints for every Wheel object in the wheel array.
+	 * @param pids The array of PID Controllers to set
+	 * @param setpoint The setpoint
+	 */
+	public static void setAllPIDSetpoints(int setpoint, Wheel[] wheel) {
+		for (Wheel w : wheel) {
+			w.setSetpoint(setpoint);
+		}
+	}
+
+	/**
+	 * Resets the encoders of all the wheel objects, setting all their counts to 0.
+	 */
+	public static void resetAllEncoders(Wheel[] wheel) {
+		for (Wheel w : wheel) {
+			w.resetEncoderPosition();
+		}
+	}
 }

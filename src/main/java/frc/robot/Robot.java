@@ -20,10 +20,8 @@ import com.kauailabs.navx.frc.AHRS;
 
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.SPI;
-import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -76,10 +74,10 @@ public class Robot extends TimedRobot {
 
 	// Define swerve wheel classes
 	static Wheel wheel[] = {
-		new Wheel(new Encoder(0,1), new TalonSRX(0), new VictorSPX(5), new AnalogInput(0)),// front left
-		new Wheel(new Encoder(2,3), new TalonSRX(1), new VictorSPX(6), new AnalogInput(1)),// front right
-		new Wheel(new Encoder(6,7), new TalonSRX(2), new VictorSPX(7), new AnalogInput(2)),// back left
-		new Wheel(new Encoder(4,5), new TalonSRX(3), new VictorSPX(8), new AnalogInput(3))// back right
+		new Wheel(new TalonSRX(0), new VictorSPX(5), new AnalogInput(0), 0),// front left
+		new Wheel(new TalonSRX(1), new VictorSPX(6), new AnalogInput(1), 1),// front right
+		new Wheel(new TalonSRX(2), new VictorSPX(7), new AnalogInput(2), 2),// back left
+		new Wheel(new TalonSRX(3), new VictorSPX(8), new AnalogInput(3), 3)// back right
 	};
 	
 	// Xbox controllers
@@ -124,8 +122,8 @@ public class Robot extends TimedRobot {
 			}
 		} else {
 			// Emergency tank drive
-			setAllPIDSetpoints(0);
-			resetAllWheels();
+			Utility.setAllPIDSetpoints(0, wheel);
+			Utility.resetAllWheels(wheel);
 			wheel[0].motorDrive.set(ControlMode.PercentOutput, controlWorking.getRawAxis(5));
 			wheel[3].motorDrive.set(ControlMode.PercentOutput, controlWorking.getRawAxis(5));
 			wheel[2].motorDrive.set(ControlMode.PercentOutput, controlWorking.getRawAxis(1));
@@ -165,20 +163,16 @@ public class Robot extends TimedRobot {
 		wheelSpeed4 = Math.sqrt(Math.pow(a, 2) + Math.pow(c, 2));
 
 		encoderSetpointA = wheel[0].calculateWheelAngle(b, c);
-		wheel[0].setSetpoint(encoderSetpointA);
-		SmartDashboard.putNumber("Enc. A setpoint", encoderSetpointA);
+		wheel[0].setSetpoint((int) encoderSetpointA);
 		
 		encoderSetpointB = wheel[1].calculateWheelAngle(b, d);
-		wheel[1].setSetpoint(encoderSetpointB);
-		SmartDashboard.putNumber("Enc. B setpoint", encoderSetpointB);
+		wheel[1].setSetpoint((int) encoderSetpointB);
 		
 		encoderSetpointC = wheel[2].calculateWheelAngle(a, d);
-		wheel[2].setSetpoint(encoderSetpointC);
-		SmartDashboard.putNumber("Enc. C setpoint", encoderSetpointC);
+		wheel[2].setSetpoint((int) encoderSetpointC);
 		
 		encoderSetpointD = wheel[3].calculateWheelAngle(a, c);
-		wheel[3].setSetpoint(encoderSetpointD);
-		SmartDashboard.putNumber("Enc. D setpoint", encoderSetpointD);
+		wheel[3].setSetpoint((int) encoderSetpointD);
 
 		// If a wheel calculated itself to a value above 1, reduce all wheel speeds
 		// TODO play with these lines of code. Try setting each wheel speed to Math.max(wheelSpeed, 1) instead
@@ -224,57 +218,6 @@ public class Robot extends TimedRobot {
 		else wheel[wheelTune].motorDrive.set(ControlMode.PercentOutput, 0);
 	}
 
-	/**
-	 * Resets all of the SwerveWheel objects, putting them on a clean slate
-	 * (eliminates flipped orientations, stacked setpoints, etc.). This doesn't
-	 * actually reset their encoder values; for that, use resetAllEncoders()
-	 */
-	public void resetAllWheels() {
-		for (Wheel w : wheel) {
-			w.reset();
-		}
-	}
-
-	/**
-	 * Sets all drive wheels to a single value. This is good for turning all the motors off.
-	 * @param val is the value to set all the wheels to
-	 */
-	public void setAllWheels(double val) {
-		for (Wheel w : wheel) {
-			w.motorDrive.set(ControlMode.PercentOutput, val * w.getFlip());
-		}
-	}
-	
-	/**
-	 * Turns on and off each of the robot's Wheel objects.
-	 * @param enabled True to enable, false to disable
-	 */
-	public void setAllPIDControllers(boolean enabled) {
-		for (Wheel w : wheel) {
-			if (enabled) w.turnOn(); else w.turnOff();
-		}
-	}
-
-	/**
-	 * Sets the setpoints for every Wheel object in the wheel array.
-	 * @param pids The array of PID Controllers to set
-	 * @param setpoint The setpoint
-	 */
-	public void setAllPIDSetpoints(double setpoint) {
-		for (Wheel w : wheel) {
-			w.setSetpoint(setpoint);
-		}
-	}
-
-	/**
-	 * Resets the encoders of all the wheel objects, setting all their counts to 0.
-	 */
-	public void resetAllEncoders() {
-		for (Wheel w : wheel) {
-			w.encoderAngle.reset();
-		}
-	}
-
 	// <--- ROBOT INITIALIZATION --->
 	
 	/**
@@ -291,8 +234,8 @@ public class Robot extends TimedRobot {
 	 * This function is called immediately when the robot is disabled
 	 */
 	public void disabledInit() {
-		setAllPIDControllers(false);	
-		setAllPIDSetpoints(0);
+		Utility.powerAllWheels(false, wheel);	
+		Utility.setAllPIDSetpoints(0, wheel);
 		aqHandler.killQueues();
 	}
 	
@@ -317,11 +260,9 @@ public class Robot extends TimedRobot {
 	 * This function is called when teleop begins
 	 */
 	public void teleopInit() {
-		setAllPIDControllers(true);
+		Utility.cleanSlateAllWheels(wheel);
 		wheelSpeedTimer.start();
 		wheelSpeedTimer.reset();
-		resetAllEncoders();
-		resetAllWheels();
 		aqHandler.killQueues();
 		gyro.reset();
 		driverOriented = true;
@@ -345,8 +286,8 @@ public class Robot extends TimedRobot {
 			
 			// Reset the wheels
 			if (controlWorking.getRawButton(Utility.BUTTON_X)) {
-				resetAllWheels();
-				setAllPIDSetpoints(0);
+				Utility.resetAllWheels(wheel);
+				Utility.setAllPIDSetpoints(0, wheel);
       		}
       
 			// Toggle driver-oriented control
@@ -358,13 +299,11 @@ public class Robot extends TimedRobot {
 			if (controlWorking.getRawButtonPressed(Utility.BUTTON_SELECT) && controlWorking.getRawButtonPressed(Utility.BUTTON_START)) {
 				if (emergencyReadjust) {
 					emergencyReadjust = false;
-					setAllPIDControllers(true);
-					resetAllWheels();
-					setAllPIDSetpoints(0);
-					resetAllEncoders();
+					// TODO clean slate protocol here
+					Utility.cleanSlateAllWheels(wheel);
 				} else {
 					emergencyReadjust = true;
-					setAllPIDControllers(false);
+					Utility.powerAllWheels(false, wheel);
 				}
 			}
 			if (emergencyReadjust) readjust();
@@ -398,10 +337,6 @@ public class Robot extends TimedRobot {
 		
 		// Dashboard dump
 		SmartDashboard.putNumber("ControllerID",singleDriverController);
-		SmartDashboard.putNumber("Encoder1:", wheel[0].encoderAngle.get());
-		SmartDashboard.putNumber("Encoder2:", wheel[1].encoderAngle.get());
-		SmartDashboard.putNumber("Encoder3:", wheel[2].encoderAngle.get());
-		SmartDashboard.putNumber("Encoder4:", wheel[3].encoderAngle.get());
 		SmartDashboard.putNumber("YawAxis", gyro.getYaw());
 		SmartDashboard.putBoolean("DriverOriented",driverOriented);
 		
@@ -416,11 +351,20 @@ public class Robot extends TimedRobot {
 		
 		SmartDashboard.putNumber("Joystick y axis", controlDriver.getRawAxis(1));
 		
-		SmartDashboard.putNumber("Encoder1:", wheel[0].encoderAngle.get());
-		SmartDashboard.putNumber("Encoder2:", wheel[1].encoderAngle.get());
-		SmartDashboard.putNumber("Encoder3:", wheel[2].encoderAngle.get());
-		SmartDashboard.putNumber("Encoder4:", wheel[3].encoderAngle.get());
+		SmartDashboard.putNumber("Encoder1:", wheel[0].getEncoderPosition());
+		SmartDashboard.putNumber("Encoder2:", wheel[1].getEncoderPosition());
+		SmartDashboard.putNumber("Encoder3:", wheel[2].getEncoderPosition());
+		SmartDashboard.putNumber("Encoder4:", wheel[3].getEncoderPosition());
+
+		SmartDashboard.putBoolean("AnalogIsTripped1:", wheel[0].isZero());
+		SmartDashboard.putBoolean("AnalogIsTripped2:", wheel[1].isZero());
+		SmartDashboard.putBoolean("AnalogIsTripped3:", wheel[2].isZero());
+		SmartDashboard.putBoolean("AnalogIsTripped4:", wheel[3].isZero());
 		
+		SmartDashboard.putNumber("Analog1:", wheel[0].getRawAnalog());
+		SmartDashboard.putNumber("Analog2:", wheel[1].getRawAnalog());
+		SmartDashboard.putNumber("Analog3:", wheel[2].getRawAnalog());
+		SmartDashboard.putNumber("Analog4:", wheel[3].getRawAnalog());
 		readjust();
 	}
 }

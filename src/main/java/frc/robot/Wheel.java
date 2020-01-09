@@ -6,26 +6,26 @@
 package frc.robot;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.SensorCollection;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 
 import edu.wpi.first.wpilibj.AnalogInput;
-import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.controller.PIDController;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpiutil.math.MathUtil;
-import edu.wpi.first.wpilibj.Spark;
 
 /**
  * A single, physical wheel. It contains attributes that aid in its calculation of angles and its motor controllers.
  */
 public class Wheel {
-	public Encoder encoderAngle;													// the encoder object for this instance of the wheel
 	public TalonSRX motorAngle;														// the motor controller that drives the angular motor of the wheel
 	public VictorSPX motorDrive;														// the motor controller that drives the rotational motor of the wheel
-	private AnalogInput zeroSensor;													// the magnetic sensor mounted at the wheel's 0 degree mark
+	public AnalogInput zeroSensor;													// the magnetic sensor mounted at the wheel's 0 degree mark
 	public PIDController PID;														// the specific PID controller for this wheel's angular motion
 
 	final private double ETD = Robot.ENC_TO_DEG; 									// encoder to degrees
+	private int myID;																// unique numeric id that describes the order of this wheel in relation to the others
 	private double setpoint = 0;													// the setpoint of the angular encoder
 	private boolean on = false;														// whether or not the wheel is "active" and responding to control
 	private double angleCalc = 0, flip = 0, flipCorrection = 0, anglePrevious = 0;	// calculation variables for swerve angles
@@ -42,11 +42,11 @@ public class Wheel {
 	 * @param a the motor controller that controls the angle of the wheel
 	 * @param d the motor control that controls the direction of the wheel
 	 */
-	public Wheel(Encoder e, TalonSRX a, VictorSPX d, AnalogInput i) {
-		encoderAngle = e;
+	public Wheel(TalonSRX a, VictorSPX d, AnalogInput i, int id) {
 		motorAngle = a;
 		motorDrive = d;
 		zeroSensor = i;
+		myID = id;
 		PID = new PIDController(0.035, 0, 0.01);	// uses encoderAngle to set motorAngle
 		//PID.setOutputRange(-1, 1);				// clamp must now be completed manually
 	}
@@ -66,7 +66,7 @@ public class Wheel {
 		
 		
 		// If the wheel needs to turn more than 180 degrees to reach the target, flip input
-		if (Math.abs(encoderAngle.get() - angleCalc) > 90 * ETD && Math.abs(encoderAngle.get() - angleCalc) < 270 * ETD) {
+		if (Math.abs(getEncoderPosition() - angleCalc) > 90 * ETD && Math.abs(getEncoderPosition() - angleCalc) < 270 * ETD) {
 			angleCalc -= flip;
 			if (flip == 0)
 				flip = 180 * ETD;
@@ -93,11 +93,11 @@ public class Wheel {
 			flipCorrection -= 360 * ETD;
 			angleCalc -= 360 * ETD;
 		}
-		if (encoderAngle.get() - angleCalc > 380 * ETD) {
+		if (getEncoderPosition() - angleCalc > 380 * ETD) {
 			flipCorrection += 360 * ETD;
 			angleCalc += 360 * ETD;
 		}
-		if (encoderAngle.get() - angleCalc < -380 * ETD) {
+		if (getEncoderPosition() - angleCalc < -380 * ETD) {
 			flipCorrection -= 360 * ETD;
 			angleCalc -= 360 * ETD;
 		}
@@ -128,12 +128,22 @@ public class Wheel {
 	 * @return boolean for whether or not analog sensor is being tripped (wheel is pointed to 0 degrees)
 	 */
 	public boolean isZero() {
-		return (zeroSensor.getValue() < 140);
+		//SensorCollection sensors = motorAngle.getSensorCollection();
+		return (zeroSensor.getVoltage() < 1);
+	}
+
+	/**
+	 * Returns the raw analog sensor value.
+	 */
+	public double getRawAnalog() {
+		//SensorCollection sensors = motorAngle.getSensorCollection();
+		//return (sensors.getAnalogInRaw());
+		return zeroSensor.getVoltage();
 	}
 
 	/**
 	 * Instructs the wheel to begin rotating until its zero is found
-	 * @param resetWheel true if you would like the wheel to reset itself completely when zero is reached
+	 * @param resetWheel true if you would like the wheel to reset its rotation count and encoder position when zero is reached
 	 */
 	public void setToZero(boolean resetWheel) {
 		settingToZero = true;
@@ -153,6 +163,13 @@ public class Wheel {
 	 */
 	public boolean getFaulty() {
 		return faulty;
+	}
+
+	/**
+	 * Clears an existing fault. If the wheel has decided that it is faulty, this is the only way to turn that off besides using the clean slate startup.
+	 */
+	public void clearFault() {
+		faulty = false;
 	}
 	
 	/**
@@ -178,11 +195,27 @@ public class Wheel {
 	}
 
 	/**
+	 * Returns the position of the encoder.
+	 */
+	public double getEncoderPosition() {
+		SensorCollection sensors = motorAngle.getSensorCollection();
+		return sensors.getQuadraturePosition();
+	}
+
+	/**
 	 * Sets the setpoint of the angular motor.
 	 * @param s The new setpoint in encoder units
 	 */
-	public void setSetpoint(double s) {
+	public void setSetpoint(int s) {
 		setpoint = s;
+	}
+
+	/**
+	 * Resets the encoder position to 0.
+	 */
+	public void resetEncoderPosition() {
+		SensorCollection sensors = motorAngle.getSensorCollection();
+		sensors.setQuadraturePosition(0, 0);
 	}
 
 	/**
@@ -190,6 +223,20 @@ public class Wheel {
 	 */
 	public void turnOn() {
 		on = true;
+	}
+
+	/**
+	 * Turns the wheel on and clean slates all of its attributes.
+	 */
+	public void turnOnCleanSlate() {
+		setSetpoint(0);
+		resetEncoderPosition();
+		unlock();
+		endSetToZero();
+		reset();
+		clearFault();
+		motorDrive.set(ControlMode.PercentOutput, 0);
+		turnOn();
 	}
 
 	/**
@@ -212,7 +259,7 @@ public class Wheel {
 				motorAngle.set(ControlMode.PercentOutput, 0);
 				if (settingToZeroReset) {
 					reset();
-					encoderAngle.reset();
+					resetEncoderPosition();
 				}
 			} else {
 				motorAngle.set(ControlMode.PercentOutput, 1);
@@ -220,7 +267,7 @@ public class Wheel {
 		}
 
 		// Check for faulty status, encoder should read a constant 0 if it is failing
-		if (Math.abs(getSetpoint()) > 20 && encoderAngle.get() == 0) {
+		if (Math.abs(getSetpoint()) > 20 && getEncoderPosition() == 0) {
 			// Begin counting
 			faultySetpointTimer ++;
 			if (faultySetpointTimer > 120) {
@@ -241,12 +288,16 @@ public class Wheel {
 
 		// Turn the wheels based on encoder input
 		if (on) {
-			double calc = PID.calculate(encoderAngle.get(), setpoint);
+			double calc = PID.calculate(getEncoderPosition(), setpoint);
 			calc = MathUtil.clamp(calc, -1, 1);
-			motorAngle.set(ControlMode.PercentOutput, PID.calculate(encoderAngle.get(), setpoint));
-		}
+			motorAngle.set(ControlMode.PercentOutput, calc);
+		} else motorDrive.set(ControlMode.PercentOutput, 0);
 
-		// TODO SmartDashboard output
+		// Put wheel stats on the SmartDashboard
+		SmartDashboard.putNumber("Wheel " + myID + "Encoder", getEncoderPosition());
+		SmartDashboard.putNumber("Wheel " + myID + "Setpoint", getSetpoint());
+		SmartDashboard.putBoolean("Wheel " + myID + "Fault", getFaulty());
+		SmartDashboard.putBoolean("Wheel " + myID + "Zeroed", isZero());
 	}
 }
 
