@@ -5,8 +5,13 @@
 
 package frc.robot;
 
+import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.SensorCollection;
+import com.ctre.phoenix.motorcontrol.can.TalonSRX;
+import com.ctre.phoenix.motorcontrol.can.VictorSPX;
+
 import edu.wpi.first.wpilibj.Encoder;
-import edu.wpi.first.wpilibj.Spark;
+import edu.wpi.first.wpilibj.PIDController;
 
 /**
  * A single, physical wheel. It contains attributes that aid in its calculation of angles and its motor controllers.
@@ -15,22 +20,56 @@ public class Wheel {
 	private double angleCalc = 0, flip = 0, flipCorrection = 0, anglePrevious = 0;	// calculation variables for swerve angles
 	private boolean lockFlip = false;												// strictly for the 2018 auto program
 	public Encoder encoderAngle;													// the encoder object for this instance of the wheel
-	public Spark motorAngle;														// the motor controller that drives the angular motor of the wheel
-	public Spark motorDrive;														// the motor controller that drives the rotational motor of the wheel
+	public TalonSRX motorAngle;														// the motor controller that drives the angular motor of the wheel
+	public VictorSPX motorDrive;													// the motor controller that drives the rotational motor of the wheel
+	private double setpoint;														// angular encoder setpoint
+	public PIDController PID;														// PID controller for this wheel
 	final private double ETD = Robot.ENC_TO_DEG; 									// encoder to degrees
+	public boolean on = false;														// whether the wheel is supposed to calculate or not
 
 	/**
 	 * Creates a new wheel instance. There should only be four of these
-	 * @param e an encoder instance for this module
 	 * @param a the motor controller that controls the angle of the wheel
 	 * @param d the motor control that controls the direction of the wheel
 	 */
-	public Wheel(Encoder e, Spark a, Spark d) {
-		encoderAngle = e;
+	public Wheel(TalonSRX a, VictorSPX d) {
 		motorAngle = a;
 		motorDrive = d;
+		PID = new PIDController(0.035, 0.0, 0.01);
 	}
 	
+	/**
+	 * Returns the position of the encoder.
+	 */
+	public int getEncoderPosition() {
+		SensorCollection sensors = motorAngle.getSensorCollection();
+		return sensors.getQuadraturePosition();
+	}
+
+	/**
+	 * Sets the position of the encoder. Usually only used for resetting the encoder back to 0.
+	 * @param s
+	 */
+	public void setEncoderPosition(int s) {
+		SensorCollection sensors = motorAngle.getSensorCollection();
+		sensors.setQuadraturePosition(s, 0);
+	}
+
+	/**
+	 * Gets the setpoint of the encoder.
+	 */
+	public double getSetpoint() {
+		return setpoint;
+	}
+
+	/**
+	 * Sets the setpoint for the angular motor.
+	 * @param s the setpoint to set it to
+	 */
+	public void setSetpoint(double s) {
+		setpoint = s;
+	}
+
 	/**
 	 * This function takes
 	 * oh bubbers looks like this javadoc never got finished... this function is a mystery...
@@ -96,6 +135,13 @@ public class Wheel {
 	
 	public void reset() {
 		angleCalc = 0;flip = 0;anglePrevious = 0;flipCorrection = 0;
+	}
+
+	/**
+	 * Turns the wheel to the setpoint. Should be running constantly.
+	 */
+	public void setTurn() {
+		if (on) motorAngle.set(ControlMode.PercentOutput, MathUtil.clamp(PID.calculate(getEncoderPosition(), getSetpoint()), -1, 1));
 	}
 }
 
