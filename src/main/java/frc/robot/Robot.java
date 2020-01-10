@@ -46,9 +46,9 @@ public class Robot extends TimedRobot {
 	final static double ROBOT_WIDTH = 29;
 	final static double ROBOT_LENGTH = 29;
 	final static double ROBOT_R = Math.sqrt(Math.pow(ROBOT_LENGTH, 2) + Math.pow(ROBOT_WIDTH, 2));
-	final static double ENC_TO_DEG = 1.158333;
+	final static double ENC_TO_DEG = 1.158333;		// TODO change ENC_TO_DEG and ENC_360 to align with new encoder resolution
 	final static double ABS_TO_DEG = 11.244444;
-	final static double ENC_360 = 417;
+	final static double ENC_360 = 417;				// formerly 417 with original Spark-driven swerves
 	final static double IN_TO_ENC = 10.394;
 
 	// BEGINNING VARIABLES

@@ -36,7 +36,7 @@ public class Wheel {
 	private int faultySetpointTimer = -1;											// counts how long a disparity has existed between the PID setpoint and the encoder 
 	private boolean lockAtZero = false;												// whether the wheels should be locked at zero using the analog input or not
 
-	private double kP = 0.0771;// formerly 0.0071
+	private double kP = 0.0071;
 	private double kI = 0.00008;
 	private double kD = 0.000056;
 
@@ -297,6 +297,7 @@ public class Wheel {
 
 		// Turn the wheels based on encoder input
 		if (on) {
+			// TODO see if removing the division by 4 fixes the problem
 			double set = setpoint / 4;
 			double calc = PID.calculate(getEncoderPosition() / 4, set);
 			calc = MathUtil.clamp(calc, -1, 1);
