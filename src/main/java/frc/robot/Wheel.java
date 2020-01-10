@@ -27,7 +27,7 @@ public class Wheel {
 	final private double ETD = Robot.ENC_TO_DEG; 									// encoder to degrees
 	private int myID;																// unique numeric id that describes the order of this wheel in relation to the others
 	private double setpoint = 0;													// the setpoint of the angular encoder
-	private boolean on = false;														// whether or not the wheel is "active" and responding to control
+	public boolean on = false;														// whether or not the wheel is "active" and responding to control
 	private double angleCalc = 0, flip = 0, flipCorrection = 0, anglePrevious = 0;	// calculation variables for swerve angles
 	private boolean lockFlip = false;												// strictly for the 2018 auto program
 	private boolean settingToZero = false;											// flag for whether or not the wheel is currently trying to find its zero
@@ -35,6 +35,10 @@ public class Wheel {
 	private boolean faulty = false;													// whether or not this wheel instance has been flagged for faulty rotational behavior
 	private int faultySetpointTimer = -1;											// counts how long a disparity has existed between the PID setpoint and the encoder 
 	private boolean lockAtZero = false;												// whether the wheels should be locked at zero using the analog input or not
+
+	private double kP = 0.0771;// formerly 0.0071
+	private double kI = 0.00008;
+	private double kD = 0.000056;
 
 	/**
 	 * Creates a new wheel instance. There should only be four of these
@@ -47,8 +51,8 @@ public class Wheel {
 		motorDrive = d;
 		zeroSensor = i;
 		myID = id;
-		PID = new PIDController(0.035, 0, 0.01);	// uses encoderAngle to set motorAngle
-		//PID.setOutputRange(-1, 1);				// clamp must now be completed manually
+		PID = new PIDController(kP, kI, kD);	// uses encoderAngle to set motorAngle
+		PID.setTolerance(20);
 	}
 	
 	/**
@@ -229,6 +233,7 @@ public class Wheel {
 	 * Turns the wheel on and clean slates all of its attributes.
 	 */
 	public void turnOnCleanSlate() {
+		PID.reset();
 		setSetpoint(0);
 		resetEncoderPosition();
 		unlock();
@@ -236,6 +241,7 @@ public class Wheel {
 		reset();
 		clearFault();
 		motorDrive.set(ControlMode.PercentOutput, 0);
+		motorAngle.set(ControlMode.PercentOutput, 0);
 		turnOn();
 	}
 
@@ -253,6 +259,8 @@ public class Wheel {
 	 */
 	public void process() {
 		// Turn wheel to zero
+		settingToZero = false;	// disabled for debugging purposes
+
 		if (settingToZero) {
 			if (isZero()) {
 				settingToZero = false;
@@ -279,6 +287,7 @@ public class Wheel {
 		}
 		
 		// Make sure the wheel is locked at zero
+		lockAtZero = false;// overrided for debug
 		if (lockAtZero) {
 			if (faulty && !isZero()) {
 				setToZero(true);
@@ -288,14 +297,40 @@ public class Wheel {
 
 		// Turn the wheels based on encoder input
 		if (on) {
-			double calc = PID.calculate(getEncoderPosition(), setpoint);
+			double set = setpoint / 4;
+			double calc = PID.calculate(getEncoderPosition() / 4, set);
 			calc = MathUtil.clamp(calc, -1, 1);
 			motorAngle.set(ControlMode.PercentOutput, calc);
-		} else motorDrive.set(ControlMode.PercentOutput, 0);
+		} else {
+			motorDrive.set(ControlMode.PercentOutput, 0);
+			motorAngle.set(ControlMode.PercentOutput, 0);
+		}
+
+		
+/*
+		kP = SmartDashboard.getNumber("P", kP);
+		kI = SmartDashboard.getNumber("I", kI);
+		kD = SmartDashboard.getNumber("D", kD);
+
+		setpoint = SmartDashboard.getNumber("Wheel " + myID + "Setpoint", 0);
+
+		SmartDashboard.putNumber("P", kP);
+		SmartDashboard.putNumber("I", kI);
+		SmartDashboard.putNumber("D", kD);
+
+		SmartDashboard.putNumber("Wheel " + myID + "Setpoint", getSetpoint());
+		
+
+		// PID tuning
+		PID.setP(kP);
+		PID.setI(kI);
+		PID.setD(kD);
 
 		// Put wheel stats on the SmartDashboard
+		*/
 		SmartDashboard.putNumber("Wheel " + myID + "Encoder", getEncoderPosition());
-		SmartDashboard.putNumber("Wheel " + myID + "Setpoint", getSetpoint());
+		//SmartDashboard.putNumber("GRAPH " + myID + "Encoder", getEncoderPosition());
+		
 		SmartDashboard.putBoolean("Wheel " + myID + "Fault", getFaulty());
 		SmartDashboard.putBoolean("Wheel " + myID + "Zeroed", isZero());
 	}

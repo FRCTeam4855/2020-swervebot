@@ -20,6 +20,7 @@ import com.kauailabs.navx.frc.AHRS;
 
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.TimedRobot;
@@ -94,7 +95,8 @@ public class Robot extends TimedRobot {
 	// Reference IDs for action queues
 	final int QUEUE_TEST = 0;
 	//=======================================
-
+	//sdfhasdjoaiugioasduoigajodgjaojgoasjfoiasjoifjsadfhasifhwiewojfwoiejfoiwejfiwjefwjf
+	Encoder enc = new Encoder(0, 1);
 	// End of variable definitions
 
 	/**
@@ -343,12 +345,18 @@ public class Robot extends TimedRobot {
 		// End UNIVERSAL FUNCTIONS
 	}
 
+	@Override
+	public void testInit() {
+		Utility.cleanSlateAllWheels(wheel);
+		SmartDashboard.putBoolean("Turned On", false);
+	}
+
 	/**
 	 * This function is called periodically during test mode
 	 */
 	@Override
 	public void testPeriodic() {
-		
+		/*
 		SmartDashboard.putNumber("Joystick y axis", controlDriver.getRawAxis(1));
 		
 		SmartDashboard.putNumber("Encoder1:", wheel[0].getEncoderPosition());
@@ -365,6 +373,11 @@ public class Robot extends TimedRobot {
 		SmartDashboard.putNumber("Analog2:", wheel[1].getRawAnalog());
 		SmartDashboard.putNumber("Analog3:", wheel[2].getRawAnalog());
 		SmartDashboard.putNumber("Analog4:", wheel[3].getRawAnalog());
+		*/
+
+		
+		wheel[0].on = SmartDashboard.getBoolean("Turned On", false);
 		readjust();
+		wheel[0].process();
 	}
 }
