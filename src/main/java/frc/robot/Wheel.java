@@ -5,12 +5,8 @@
 
 package frc.robot;
 
-import com.ctre.phoenix.motorcontrol.ControlMode;
-import com.ctre.phoenix.motorcontrol.SensorCollection;
-import com.ctre.phoenix.motorcontrol.can.TalonSRX;
-import com.ctre.phoenix.motorcontrol.can.VictorSPX;
-
-import edu.wpi.first.wpilibj.AnalogInput;
+import edu.wpi.first.wpilibj.Encoder;
+import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.controller.PIDController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpiutil.math.MathUtil;
@@ -19,9 +15,9 @@ import edu.wpi.first.wpiutil.math.MathUtil;
  * A single, physical wheel. It contains attributes that aid in its calculation of angles and its motor controllers.
  */
 public class Wheel {
-	public TalonSRX motorAngle;														// the motor controller that drives the angular motor of the wheel
-	public VictorSPX motorDrive;														// the motor controller that drives the rotational motor of the wheel
-	public AnalogInput zeroSensor;													// the magnetic sensor mounted at the wheel's 0 degree mark
+	public Spark motorAngle;														// the motor controller that drives the angular motor of the wheel
+	public Spark motorDrive;														// the motor controller that drives the rotational motor of the wheel
+	public Encoder encoder;															// the magnetic encoder mounted onto each swerve module
 	public PIDController PID;														// the specific PID controller for this wheel's angular motion
 
 	final private double ETD = Robot.ENC_TO_DEG; 									// encoder to degrees
@@ -30,15 +26,12 @@ public class Wheel {
 	public boolean on = false;														// whether or not the wheel is "active" and responding to control
 	private double angleCalc = 0, flip = 0, flipCorrection = 0, anglePrevious = 0;	// calculation variables for swerve angles
 	private boolean lockFlip = false;												// strictly for the 2018 auto program
-	private boolean settingToZero = false;											// flag for whether or not the wheel is currently trying to find its zero
-	private boolean settingToZeroReset = false;										// flag for whether or not the wheel should reset itself when zero is reached
 	private boolean faulty = false;													// whether or not this wheel instance has been flagged for faulty rotational behavior
 	private int faultySetpointTimer = -1;											// counts how long a disparity has existed between the PID setpoint and the encoder 
-	private boolean lockAtZero = false;												// whether the wheels should be locked at zero using the analog input or not
 
-	private double kP = 0.0771;// formerly 0.0071
-	private double kI = 0.00008;
-	private double kD = 0.000056;
+	private double kP = 0.035;
+	private double kI = 0;
+	private double kD = 0.01;
 
 	/**
 	 * Creates a new wheel instance. There should only be four of these
@@ -46,10 +39,10 @@ public class Wheel {
 	 * @param a the motor controller that controls the angle of the wheel
 	 * @param d the motor control that controls the direction of the wheel
 	 */
-	public Wheel(TalonSRX a, VictorSPX d, AnalogInput i, int id) {
+	public Wheel(Spark a, Spark d, Encoder e, int id) {
 		motorAngle = a;
 		motorDrive = d;
-		zeroSensor = i;
+		encoder = e;
 		myID = id;
 		PID = new PIDController(kP, kI, kD);	// uses encoderAngle to set motorAngle
 		PID.setTolerance(20);
@@ -128,40 +121,6 @@ public class Wheel {
 	}
 
 	/**
-	 * Returns true if the analog sensor is being tripped and false if not
-	 * @return boolean for whether or not analog sensor is being tripped (wheel is pointed to 0 degrees)
-	 */
-	public boolean isZero() {
-		//SensorCollection sensors = motorAngle.getSensorCollection();
-		return (zeroSensor.getVoltage() < 1);
-	}
-
-	/**
-	 * Returns the raw analog sensor value.
-	 */
-	public double getRawAnalog() {
-		//SensorCollection sensors = motorAngle.getSensorCollection();
-		//return (sensors.getAnalogInRaw());
-		return zeroSensor.getVoltage();
-	}
-
-	/**
-	 * Instructs the wheel to begin rotating until its zero is found
-	 * @param resetWheel true if you would like the wheel to reset its rotation count and encoder position when zero is reached
-	 */
-	public void setToZero(boolean resetWheel) {
-		settingToZero = true;
-		settingToZeroReset = resetWheel;
-	}
-
-	/**
-	 * Prematurely ends the routine to set the wheel to zero
-	 */
-	public void endSetToZero() {
-		settingToZero = false;
-	}
-
-	/**
 	 * Returns true if the wheel has deemed its behavior faulty
 	 * @return boolean for whether or not this wheel is faulty or not
 	 */
@@ -175,21 +134,6 @@ public class Wheel {
 	public void clearFault() {
 		faulty = false;
 	}
-	
-	/**
-	 * Locks the wheel at 0. If the wheel is flagged as faulty, the setpoint will be foregone and the analog sensor will be
-	 * the sole source of information on whether or not the wheel has stayed.
-	 */
-	public void lock() {
-		lockAtZero = true;
-	}
-
-	/**
-	 * Unlocks the wheel.
-	 */
-	public void unlock() {
-		lockAtZero = false;
-	}
 
 	/**
 	 * Returns the setpoint of the angular motor.
@@ -202,8 +146,7 @@ public class Wheel {
 	 * Returns the position of the encoder.
 	 */
 	public double getEncoderPosition() {
-		SensorCollection sensors = motorAngle.getSensorCollection();
-		return sensors.getQuadraturePosition();
+		return encoder.get();
 	}
 
 	/**
@@ -218,8 +161,7 @@ public class Wheel {
 	 * Resets the encoder position to 0.
 	 */
 	public void resetEncoderPosition() {
-		SensorCollection sensors = motorAngle.getSensorCollection();
-		sensors.setQuadraturePosition(0, 0);
+		encoder.reset();
 	}
 
 	/**
@@ -236,12 +178,10 @@ public class Wheel {
 		PID.reset();
 		setSetpoint(0);
 		resetEncoderPosition();
-		unlock();
-		endSetToZero();
 		reset();
 		clearFault();
-		motorDrive.set(ControlMode.PercentOutput, 0);
-		motorAngle.set(ControlMode.PercentOutput, 0);
+		motorDrive.set(0);
+		motorAngle.set(0);
 		turnOn();
 	}
 
@@ -258,22 +198,6 @@ public class Wheel {
 	 * the SmartDashboard.
 	 */
 	public void process() {
-		// Turn wheel to zero
-		settingToZero = false;	// disabled for debugging purposes
-
-		if (settingToZero) {
-			if (isZero()) {
-				settingToZero = false;
-				motorAngle.set(ControlMode.PercentOutput, 0);
-				if (settingToZeroReset) {
-					reset();
-					resetEncoderPosition();
-				}
-			} else {
-				motorAngle.set(ControlMode.PercentOutput, 1);
-			}
-		}
-
 		// Check for faulty status, encoder should read a constant 0 if it is failing
 		if (Math.abs(getSetpoint()) > 20 && getEncoderPosition() == 0) {
 			// Begin counting
@@ -285,54 +209,22 @@ public class Wheel {
 		} else {
 			faultySetpointTimer = -1;
 		}
-		
-		// Make sure the wheel is locked at zero
-		lockAtZero = false;// overrided for debug
-		if (lockAtZero) {
-			if (faulty && !isZero()) {
-				setToZero(true);
-			}
-			setSetpoint(0);
-		}
 
 		// Turn the wheels based on encoder input
 		if (on) {
-			double set = setpoint / 4;
-			double calc = PID.calculate(getEncoderPosition() / 4, set);
+			double set = setpoint;
+			double calc = PID.calculate(getEncoderPosition(), set);
 			calc = MathUtil.clamp(calc, -1, 1);
-			motorAngle.set(ControlMode.PercentOutput, calc);
+			motorAngle.set(calc);
 		} else {
-			motorDrive.set(ControlMode.PercentOutput, 0);
-			motorAngle.set(ControlMode.PercentOutput, 0);
+			motorDrive.set(0);
+			motorAngle.set(0);
 		}
 
-		
-/*
-		kP = SmartDashboard.getNumber("P", kP);
-		kI = SmartDashboard.getNumber("I", kI);
-		kD = SmartDashboard.getNumber("D", kD);
-
-		setpoint = SmartDashboard.getNumber("Wheel " + myID + "Setpoint", 0);
-
-		SmartDashboard.putNumber("P", kP);
-		SmartDashboard.putNumber("I", kI);
-		SmartDashboard.putNumber("D", kD);
-
-		SmartDashboard.putNumber("Wheel " + myID + "Setpoint", getSetpoint());
-		
-
-		// PID tuning
-		PID.setP(kP);
-		PID.setI(kI);
-		PID.setD(kD);
-
 		// Put wheel stats on the SmartDashboard
-		*/
 		SmartDashboard.putNumber("Wheel " + myID + "Encoder", getEncoderPosition());
-		//SmartDashboard.putNumber("GRAPH " + myID + "Encoder", getEncoderPosition());
-		
+		SmartDashboard.putNumber("Wheel " + myID + "Setpoint", getSetpoint());
 		SmartDashboard.putBoolean("Wheel " + myID + "Fault", getFaulty());
-		SmartDashboard.putBoolean("Wheel " + myID + "Zeroed", isZero());
 	}
 }
 

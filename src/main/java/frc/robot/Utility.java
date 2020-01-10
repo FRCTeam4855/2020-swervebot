@@ -41,15 +41,6 @@ public class Utility {
 			w.reset();
 		}
 	}
-	
-	/**
-	 * Calibrates each wheel using its analog sensor.
-	 */
-	public static void zeroAllWheelsWithAnalog(Wheel[] wheel) {
-		for (Wheel w : wheel) {
-			w.setToZero(true);
-		}
-	}
 
 	/**
 	 * Turns on and off each of the robot's Wheel objects.

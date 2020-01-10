@@ -9,6 +9,8 @@
 // 2020 GAME INFINITE RECHARGE
 
 // Swerve-bot code: Robot
+// This branch of program exists to be able to drive a generic swerve drive using Sparks instead of the CAN motor controllers on our newer base.
+// It is specifically written to be able to drive the 2019 robot.
 
 package frc.robot;
 // package edu.christmas.2012;
@@ -23,6 +25,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.SPI;
+import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -75,10 +78,10 @@ public class Robot extends TimedRobot {
 
 	// Define swerve wheel classes
 	static Wheel wheel[] = {
-		new Wheel(new TalonSRX(0), new VictorSPX(5), new AnalogInput(0), 0),// front left
-		new Wheel(new TalonSRX(1), new VictorSPX(6), new AnalogInput(1), 1),// front right
-		new Wheel(new TalonSRX(2), new VictorSPX(7), new AnalogInput(2), 2),// back left
-		new Wheel(new TalonSRX(3), new VictorSPX(8), new AnalogInput(3), 3)// back right
+		new Wheel(new Spark(0), new Spark(5), new Encoder(0, 1), 0),// front left
+		new Wheel(new Spark(1), new Spark(6), new Encoder(2, 3), 1),// front right
+		new Wheel(new Spark(2), new Spark(7), new Encoder(6, 7), 2),// back left
+		new Wheel(new Spark(3), new Spark(8), new Encoder(4, 5), 3)// back right
 	};
 	
 	// Xbox controllers
@@ -95,8 +98,7 @@ public class Robot extends TimedRobot {
 	// Reference IDs for action queues
 	final int QUEUE_TEST = 0;
 	//=======================================
-	//sdfhasdjoaiugioasduoigajodgjaojgoasjfoiasjoifjsadfhasifhwiewojfwoiejfoiwejfiwjefwjf
-	Encoder enc = new Encoder(0, 1);
+
 	// End of variable definitions
 
 	/**
@@ -126,10 +128,10 @@ public class Robot extends TimedRobot {
 			// Emergency tank drive
 			Utility.setAllPIDSetpoints(0, wheel);
 			Utility.resetAllWheels(wheel);
-			wheel[0].motorDrive.set(ControlMode.PercentOutput, controlWorking.getRawAxis(5));
-			wheel[3].motorDrive.set(ControlMode.PercentOutput, controlWorking.getRawAxis(5));
-			wheel[2].motorDrive.set(ControlMode.PercentOutput, controlWorking.getRawAxis(1));
-			wheel[1].motorDrive.set(ControlMode.PercentOutput, controlWorking.getRawAxis(1));
+			wheel[0].motorDrive.set(controlWorking.getRawAxis(5));
+			wheel[3].motorDrive.set(controlWorking.getRawAxis(5));
+			wheel[2].motorDrive.set(controlWorking.getRawAxis(1));
+			wheel[1].motorDrive.set(controlWorking.getRawAxis(1));
 		}
 
 		for (Wheel w : wheel) {
@@ -195,10 +197,10 @@ public class Robot extends TimedRobot {
 			wheelSpeedTimer.reset();
 		}
 		
-		wheel[0].motorDrive.set(ControlMode.PercentOutput, wheelSpeedActual1);
-		wheel[1].motorDrive.set(ControlMode.PercentOutput, wheelSpeedActual2);
-		wheel[2].motorDrive.set(ControlMode.PercentOutput, wheelSpeedActual3);
-		wheel[3].motorDrive.set(ControlMode.PercentOutput, wheelSpeedActual4);
+		wheel[0].motorDrive.set(wheelSpeedActual1);
+		wheel[1].motorDrive.set(wheelSpeedActual2);
+		wheel[2].motorDrive.set(wheelSpeedActual3);
+		wheel[3].motorDrive.set(wheelSpeedActual4);
 	}
 
 	/**
@@ -211,13 +213,13 @@ public class Robot extends TimedRobot {
 		if (controlDriver.getRawButton(4)) wheelTune = 3;
 		
 		// Adjust wheel angle
-		if (controlDriver.getRawButton(5)) wheel[wheelTune].motorAngle.set(ControlMode.PercentOutput, 0.3);
-		else if (controlDriver.getRawButton(6)) wheel[wheelTune].motorAngle.set(ControlMode.PercentOutput, -0.3); else wheel[wheelTune].motorAngle.set(ControlMode.PercentOutput, 0);
+		if (controlDriver.getRawButton(5)) wheel[wheelTune].motorAngle.set(0.3);
+		else if (controlDriver.getRawButton(6)) wheel[wheelTune].motorAngle.set(-0.3); else wheel[wheelTune].motorAngle.set(0);
 		
 		// Spin wheels
-		if (controlDriver.getRawAxis(2) > .09) wheel[wheelTune].motorDrive.set(ControlMode.PercentOutput, controlDriver.getRawAxis(2) / 2);
-		else if (controlDriver.getRawAxis(3) > .09) wheel[wheelTune].motorDrive.set(ControlMode.PercentOutput, -controlDriver.getRawAxis(3) / 2);
-		else wheel[wheelTune].motorDrive.set(ControlMode.PercentOutput, 0);
+		if (controlDriver.getRawAxis(2) > .09) wheel[wheelTune].motorDrive.set(controlDriver.getRawAxis(2) / 2);
+		else if (controlDriver.getRawAxis(3) > .09) wheel[wheelTune].motorDrive.set(-controlDriver.getRawAxis(3) / 2);
+		else wheel[wheelTune].motorDrive.set(0);
 	}
 
 	// <--- ROBOT INITIALIZATION --->
