@@ -10,7 +10,7 @@ package frc.robot;
  */
 public class ActionQueue {
 	enum Command {
-		DEAD, PREPARE_TURN, SWERVE, SHOOT_LOW, SHOOT_HIGH;
+		DEAD, PREPARE_TURN, SWERVE, DRIVE_STRAIGHT, SHOOT_LOW, SHOOT_HIGH;
 	}
 	
 	Command queueListActions [] = new Command [20];		// action ID to perform
@@ -104,6 +104,9 @@ public class ActionQueue {
                         break;
                     case SWERVE:
                         ActionQueueHandler.queueSwerve(queueListTimeEnd[i],queueListParam1[i],queueListParam2[i],queueListParam3[i]);
+						break;
+					case DRIVE_STRAIGHT:
+						ActionQueueHandler.queueDrive_Straight(queueListTimeEnd[i],queueListParam1[i]);
 						break;
 					default:
                         break;

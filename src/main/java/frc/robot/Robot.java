@@ -46,9 +46,9 @@ public class Robot extends TimedRobot {
 	final static double ROBOT_WIDTH = 29;
 	final static double ROBOT_LENGTH = 29;
 	final static double ROBOT_R = Math.sqrt(Math.pow(ROBOT_LENGTH, 2) + Math.pow(ROBOT_WIDTH, 2));
-	final static double ENC_TO_DEG = 1.158333;		// TODO change ENC_TO_DEG and ENC_360 to align with new encoder resolution
+	final static double ENC_TO_DEG = 4.588888;		// formerly 1.158333
 	final static double ABS_TO_DEG = 11.244444;
-	final static double ENC_360 = 417;				// formerly 417 with original Spark-driven swerves
+	final static double ENC_360 = 1652;				// formerly 417 with original Spark-driven swerves
 	final static double IN_TO_ENC = 10.394;
 
 	// BEGINNING VARIABLES
@@ -75,8 +75,8 @@ public class Robot extends TimedRobot {
 
 	// Define swerve wheel classes
 	static Wheel wheel[] = {
-		new Wheel(new TalonSRX(0), new VictorSPX(5), new AnalogInput(0), 0),// front left
-		new Wheel(new TalonSRX(1), new VictorSPX(6), new AnalogInput(1), 1),// front right
+		new Wheel(new TalonSRX(1), new VictorSPX(6), new AnalogInput(1), 0),// front right
+		new Wheel(new TalonSRX(0), new VictorSPX(5), new AnalogInput(0), 1),// front left
 		new Wheel(new TalonSRX(2), new VictorSPX(7), new AnalogInput(2), 2),// back left
 		new Wheel(new TalonSRX(3), new VictorSPX(8), new AnalogInput(3), 3)// back right
 	};
@@ -94,9 +94,9 @@ public class Robot extends TimedRobot {
 
 	// Reference IDs for action queues
 	final int QUEUE_TEST = 0;
+	final int QUEUE_DRIVESTRAIGHT = 1;
 	//=======================================
-	//sdfhasdjoaiugioasduoigajodgjaojgoasjfoiasjoifjsadfhasifhwiewojfwoiejfoiwejfiwjefwjf
-	Encoder enc = new Encoder(0, 1);
+
 	// End of variable definitions
 
 	/**
@@ -268,6 +268,7 @@ public class Robot extends TimedRobot {
 		aqHandler.killQueues();
 		gyro.reset();
 		driverOriented = true;
+		emergencyTank = false;
 	}
 	
 	/**
@@ -288,9 +289,16 @@ public class Robot extends TimedRobot {
 			
 			// Reset the wheels
 			if (controlWorking.getRawButton(Utility.BUTTON_X)) {
+				// Old version of resetting wheels
 				Utility.resetAllWheels(wheel);
 				Utility.setAllPIDSetpoints(0, wheel);
-      		}
+			}
+			  
+			// Reset the wheels based on analog sensing. For emergency purposes only
+			if (controlWorking.getRawButton(Utility.BUTTON_B)) {
+				Utility.zeroAllWheelsWithAnalog(wheel);
+			}
+
       
 			// Toggle driver-oriented control
 			if (controlWorking.getRawButtonPressed(Utility.BUTTON_A)) {
@@ -374,10 +382,6 @@ public class Robot extends TimedRobot {
 		SmartDashboard.putNumber("Analog3:", wheel[2].getRawAnalog());
 		SmartDashboard.putNumber("Analog4:", wheel[3].getRawAnalog());
 		*/
-
-		
-		wheel[0].on = SmartDashboard.getBoolean("Turned On", false);
 		readjust();
-		wheel[0].process();
 	}
 }

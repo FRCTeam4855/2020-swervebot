@@ -32,6 +32,8 @@ public class Wheel {
 	private boolean lockFlip = false;												// strictly for the 2018 auto program
 	private boolean settingToZero = false;											// flag for whether or not the wheel is currently trying to find its zero
 	private boolean settingToZeroReset = false;										// flag for whether or not the wheel should reset itself when zero is reached
+	private int zeroErrorCorrectTimer = -1;											// the timer for the zeroing process correcting itself
+	private final int ZERO_CORRECT_TIME = 12;										// the amount of time the robot uses correcting the natural drift of the zeroing process
 	private boolean faulty = false;													// whether or not this wheel instance has been flagged for faulty rotational behavior
 	private int faultySetpointTimer = -1;											// counts how long a disparity has existed between the PID setpoint and the encoder 
 	private boolean lockAtZero = false;												// whether the wheels should be locked at zero using the analog input or not
@@ -258,19 +260,32 @@ public class Wheel {
 	 * the SmartDashboard.
 	 */
 	public void process() {
-		// Turn wheel to zero
-		settingToZero = false;	// disabled for debugging purposes
-
+		// Turn wheel to zero using the analog magnetic sensor. This does not use encoders and should only be attempted in an emergency
 		if (settingToZero) {
-			if (isZero()) {
-				settingToZero = false;
-				motorAngle.set(ControlMode.PercentOutput, 0);
-				if (settingToZeroReset) {
-					reset();
-					resetEncoderPosition();
+			if (isZero() || zeroErrorCorrectTimer != -1) {
+				// Correcting for natural, consistent error
+				if (zeroErrorCorrectTimer == -1) {
+					zeroErrorCorrectTimer = ZERO_CORRECT_TIME;
 				}
-			} else {
-				motorAngle.set(ControlMode.PercentOutput, 1);
+				zeroErrorCorrectTimer --;
+				int sign = -1;
+				if (myID > 1) sign = 1;
+				motorAngle.set(ControlMode.PercentOutput, .7 * sign);
+
+				// Natural error correction has ended, end the zeroing process
+				if (zeroErrorCorrectTimer == 0) {
+					settingToZero = false;
+					motorAngle.set(ControlMode.PercentOutput, 0);
+					zeroErrorCorrectTimer = -1;
+					if (settingToZeroReset) {
+						reset();
+						resetEncoderPosition();
+					}
+				}
+			} else if (zeroErrorCorrectTimer == -1) {
+				int sign = 1;
+				if (myID > 1) sign = -1;
+				motorAngle.set(ControlMode.PercentOutput, .9 * sign);
 			}
 		}
 
@@ -287,7 +302,6 @@ public class Wheel {
 		}
 		
 		// Make sure the wheel is locked at zero
-		lockAtZero = false;// overrided for debug
 		if (lockAtZero) {
 			if (faulty && !isZero()) {
 				setToZero(true);
@@ -296,13 +310,12 @@ public class Wheel {
 		}
 
 		// Turn the wheels based on encoder input
-		if (on) {
-			// TODO see if removing the division by 4 fixes the problem
+		if (on && !settingToZero) {
 			double set = setpoint / 4;
 			double calc = PID.calculate(getEncoderPosition() / 4, set);
 			calc = MathUtil.clamp(calc, -1, 1);
 			motorAngle.set(ControlMode.PercentOutput, calc);
-		} else {
+		} else if (!settingToZero) {
 			motorDrive.set(ControlMode.PercentOutput, 0);
 			motorAngle.set(ControlMode.PercentOutput, 0);
 		}
@@ -319,7 +332,7 @@ public class Wheel {
 		SmartDashboard.putNumber("I", kI);
 		SmartDashboard.putNumber("D", kD);
 
-		SmartDashboard.putNumber("Wheel " + myID + "Setpoint", getSetpoint());
+		
 		
 
 		// PID tuning
@@ -330,8 +343,7 @@ public class Wheel {
 		// Put wheel stats on the SmartDashboard
 		*/
 		SmartDashboard.putNumber("Wheel " + myID + "Encoder", getEncoderPosition());
-		//SmartDashboard.putNumber("GRAPH " + myID + "Encoder", getEncoderPosition());
-		
+		SmartDashboard.putNumber("Wheel " + myID + "Setpoint", getSetpoint());
 		SmartDashboard.putBoolean("Wheel " + myID + "Fault", getFaulty());
 		SmartDashboard.putBoolean("Wheel " + myID + "Zeroed", isZero());
 	}

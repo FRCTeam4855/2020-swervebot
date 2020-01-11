@@ -64,4 +64,13 @@ public class ActionQueueHandler {
 	public static void queueSwerve(int timeEnd, double param1, double param2, double param3) {
 		Robot.swerve(param1,param2,param3,false);
 	}
+
+	/**
+	 * The queue action for driving in a straight line alongside a wall.
+	 * @param timeEnd the designated time for the command to end
+	 * @param param1 the first parameter, the power at which to drive
+	 */
+	public static void queueDrive_Straight(int timeEnd, double param1) {
+		
+	}
 }
