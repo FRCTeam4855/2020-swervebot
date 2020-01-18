@@ -13,14 +13,16 @@
 package frc.robot;
 // package edu.christmas.2012;
 
+import java.util.ArrayList;
+
 import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.SensorCollection;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 import com.kauailabs.navx.frc.AHRS;
 
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.TimedRobot;
@@ -66,6 +68,7 @@ public class Robot extends TimedRobot {
 	static double encoderSetpointA, encoderSetpointB, encoderSetpointC, encoderSetpointD;
 	static double jStr, jFwd, jRcw;
 	static double wheelSpeed1, wheelSpeed2, wheelSpeed3, wheelSpeed4;
+	static double overrideSTR = 0, overrideFWD = 0, overrideRCW = 0;		// set these variables to override drive() values
 	// Gradual starts/stops in teleop
 	static double wheelSpeedActual1 = 0, wheelSpeedActual2 = 0, wheelSpeedActual3 = 0, wheelSpeedActual4 = 0;
 	static Timer wheelSpeedTimer = new Timer();
@@ -87,13 +90,20 @@ public class Robot extends TimedRobot {
 	Joystick controlWorking;  							// the controller currently being read from, usually used just for one-driver control
 	
 	// NavX Constructor
-	private static AHRS gyro = new AHRS(SPI.Port.kMXP);
+	public static AHRS gyro = new AHRS(SPI.Port.kMXP);
+
+	// Ultrasonic Sensor Constructor
+	AnalogInput ultrasonic = new AnalogInput(4);
+	ArrayList<Double> usNoise = new ArrayList<Double>(10);
 	
 	// Action queues
-	ActionQueueHandler aqHandler = new ActionQueueHandler(new ActionQueue[] {new ActionQueue()});
+	ActionQueueHandler aqHandler = new ActionQueueHandler(new ActionQueue[] {
+		new ActionQueue(true),	// QUEUE_ANGLE
+		new ActionQueue(true)	// QUEUE_DRIVESTRAIGHT
+	});
 
 	// Reference IDs for action queues
-	final int QUEUE_TEST = 0;
+	final int QUEUE_ANGLE = 0;
 	final int QUEUE_DRIVESTRAIGHT = 1;
 	//=======================================
 
@@ -120,6 +130,11 @@ public class Robot extends TimedRobot {
 
 				if (reverseRotate) {jRcw = -jRcw;}
 				//if (jFwd != 0 && jStr != 0 && jRcw != 0) swerve(jFwd, jStr, jRcw, driverOriented); // the conditional here made the wheels NOT turn to 0,0,0
+				// Pull from override information
+				if (overrideFWD != 0) jFwd = overrideFWD;
+				if (overrideSTR != 0) jStr = overrideSTR;
+				if (overrideRCW != 0) jRcw = overrideRCW;
+				
 				swerve(jFwd, jStr, jRcw, driverOriented);
 			}
 		} else {
@@ -220,6 +235,34 @@ public class Robot extends TimedRobot {
 		else wheel[wheelTune].motorDrive.set(ControlMode.PercentOutput, 0);
 	}
 
+	/**
+	 * Get the value of the ultrasonic sensor, using basic noise reduction techniques to make values more accurate
+	 */
+	public double getUltrasonicSensor() {
+		/*SensorCollection sensor = wheel[1].motorAngle.getSensorCollection();
+		return sensor.getAnalogInRaw();*/
+		usNoise.add(ultrasonic.getVoltage());
+		if (usNoise.size() > 10) usNoise.remove(0);
+		double runningAverage = 0;
+		double prevNum = 0;
+		boolean[] markForRemoval = new boolean[usNoise.size()];
+
+		// Mark values for removal
+		for (int i = 0; i < usNoise.size(); i ++) {
+			double num = usNoise.get(i);
+			if (num >= 1.96 || num - prevNum > 1) {
+				markForRemoval[i] = true;
+			} else markForRemoval[i] = false;
+		}
+
+		// Take average after removing numbers
+		for (int i = markForRemoval.length - 1; i < markForRemoval.length; i ++) {
+			//if (markForRemoval[i])
+		}
+
+		return runningAverage / usNoise.size();
+	}
+
 	// <--- ROBOT INITIALIZATION --->
 	
 	/**
@@ -228,8 +271,10 @@ public class Robot extends TimedRobot {
 	@Override
 	public void robotInit() {
 		// Feed action queues, they hunger for your command
-		// Test, does basically nothing
-		aqHandler.getQueue(QUEUE_TEST).queueFeed(ActionQueue.Command.SWERVE,1,50,false,.4,0,0);
+
+		aqHandler.getQueue(QUEUE_ANGLE).queueFeed(ActionQueue.Command.TURN_TO_ANGLE, 1, 80, false, 0, 0, 0);
+
+		aqHandler.getQueue(QUEUE_DRIVESTRAIGHT).queueFeed(ActionQueue.Command.DRIVE_STRAIGHT, 1, 120, false, 0, 0, 0);
 	}
 	
 	/**
@@ -284,6 +329,12 @@ public class Robot extends TimedRobot {
 			// Drive the robot
 			drive();
 			
+			// Start the Action Queue for angling the robot to an angle
+			if (controlWorking.getRawButton(Utility.BUTTON_LB)) aqHandler.getQueue(QUEUE_ANGLE).queueStart();
+			
+			// Start the Action Queue for driving the robot straight
+			if (controlWorking.getRawButton(Utility.BUTTON_LSTICK)) aqHandler.getQueue(QUEUE_DRIVESTRAIGHT).queueStart();
+
 			// Reset the gyroscope
 			if (controlWorking.getRawButton(Utility.BUTTON_Y)) gyro.reset();
 			
@@ -299,7 +350,6 @@ public class Robot extends TimedRobot {
 				Utility.zeroAllWheelsWithAnalog(wheel);
 			}
 
-      
 			// Toggle driver-oriented control
 			if (controlWorking.getRawButtonPressed(Utility.BUTTON_A)) {
 				if (driverOriented == true) driverOriented = false; else driverOriented = true;
@@ -356,7 +406,6 @@ public class Robot extends TimedRobot {
 	@Override
 	public void testInit() {
 		Utility.cleanSlateAllWheels(wheel);
-		SmartDashboard.putBoolean("Turned On", false);
 	}
 
 	/**
@@ -383,5 +432,6 @@ public class Robot extends TimedRobot {
 		SmartDashboard.putNumber("Analog4:", wheel[3].getRawAnalog());
 		*/
 		readjust();
+		//SmartDashboard.putNumber("Ultrasonic", getUltrasonicSensor());
 	}
 }
