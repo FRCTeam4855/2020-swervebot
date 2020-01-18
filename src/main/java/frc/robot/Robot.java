@@ -95,6 +95,7 @@ public class Robot extends TimedRobot {
 	// Ultrasonic Sensor Constructor
 	AnalogInput ultrasonic = new AnalogInput(4);
 	ArrayList<Double> usNoise = new ArrayList<Double>(10);
+	Lidar lidar = new Lidar();
 	
 	// Action queues
 	ActionQueueHandler aqHandler = new ActionQueueHandler(new ActionQueue[] {
@@ -399,6 +400,7 @@ public class Robot extends TimedRobot {
 		SmartDashboard.putNumber("ControllerID",singleDriverController);
 		SmartDashboard.putNumber("YawAxis", gyro.getYaw());
 		SmartDashboard.putBoolean("DriverOriented",driverOriented);
+		SmartDashboard.putNumber("Lidar Units", lidar.getDistance(Lidar.Unit.INCHES));
 		
 		// End UNIVERSAL FUNCTIONS
 	}
