@@ -5,12 +5,17 @@
 
 package frc.robot;
 
+import edu.wpi.first.wpilibj.controller.PIDController;
+import edu.wpi.first.wpiutil.math.MathUtil;
+
 /**
- * Runs all ActionQueue instances and is responsible for holding methods that run the robot and holding onto all ActionQueue objects.
+ * Runs all ActionQueue instances and is responsible for holding methods that
+ * run the robot and holding onto all ActionQueue objects.
  */
 public class ActionQueueHandler {
     private ActionQueue[] queues;
-    
+	private static PIDController PIDRotate = new PIDController(.0077, 0, 0.0007);
+	
     public ActionQueueHandler(ActionQueue[] aq) {
         queues = aq;
     }
@@ -63,5 +68,27 @@ public class ActionQueueHandler {
 	 */
 	public static void queueSwerve(int timeEnd, double param1, double param2, double param3) {
 		Robot.swerve(param1,param2,param3,false);
+	}
+
+	/**
+	 * The queue action for driving in a straight line alongside a wall.
+	 * @param timeEnd the designated time for the command to end
+	 * @param param1 the first parameter, the power at which to drive
+	 */
+	public static void queueDrive_Straight(int timeEnd, double param1) {
+		Robot.overrideFWD = .3;
+		
+	}
+
+	/**
+	 * The queue action for turning the entire robot to a certain angle. Uses a PIDController and applies the change to
+	 * the RCW parameter of Robot's swerve() method.
+	 * @param timeEnd the designated time for the command to end
+	 * @param param1 the first parameter, the angle to rotate the robot to
+	 */
+	public static void queueTurn_To_Angle(int timeEnd, double param1) {
+		double rotValue = PIDRotate.calculate(Robot.gyro.getYaw(), param1);	// calculate rotation input to a PID loop
+		rotValue = MathUtil.clamp(rotValue, -.42, .42);						// make sure robot doesn't attempt to rotate too fast
+		Robot.overrideRCW = rotValue;
 	}
 }

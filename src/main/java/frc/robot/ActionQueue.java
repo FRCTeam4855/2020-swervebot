@@ -9,10 +9,11 @@ package frc.robot;
  * A single list of commands that are executed by the robot whenever necessary.
  */
 public class ActionQueue {
+
 	enum Command {
-		DEAD, PREPARE_TURN, SWERVE;
+		DEAD, PREPARE_TURN, SWERVE, DRIVE_STRAIGHT, TURN_TO_ANGLE, SHOOT_LOW, SHOOT_HIGH;
 	}
-	
+
 	Command queueListActions [] = new Command [20];		// action ID to perform
 	int queueListTimeStart [] = new int [20];			// elapsed begin time to run a command
 	int queueListTimeEnd [] = new int [20];				// elapsed begin time to end a command, a value of -2 means a desired sensor output must be present to stop
@@ -23,10 +24,19 @@ public class ActionQueue {
 	
 	private int queueElapsedTime = 0;					// current elapsed time for this command in code steps (50 steps in 1 second)
 	private boolean queueIsRunning = false;				// if queue is enabled or not
-	
+	private boolean queueUsesSwerveOverrides = false;	// whether or not the action queue makes use of the swerve() overrides
+
 	private int queueMaxTime = -1;						// largest end time in queue
 	private int queueLength = 0;						// queue length
 	
+	/**
+	 * Constructs an ActionQueue.
+	 * @param overrides whether or not the action queue should zero out any swerve overrides when it is complete
+	 */
+	public ActionQueue(boolean overrides) {
+		queueUsesSwerveOverrides = overrides;
+	}
+
 	/**
 	 * Feeds the queue a new command. Commands can be assigned in any order.
 	 * @param action the action ID to feed
@@ -79,6 +89,11 @@ public class ActionQueue {
 	public void queueStop() {
 		queueIsRunning = false;
 		queueElapsedTime = 0;
+		if (queueUsesSwerveOverrides) {
+			Robot.overrideFWD = 0;
+			Robot.overrideSTR = 0;
+			Robot.overrideRCW = 0;
+		}
 	}
 	
 	/**
@@ -97,13 +112,19 @@ public class ActionQueue {
 		for (int i = 0; i < queueLength; i ++) {
 			if (queueListTimeEnd[i] > queueMaxTime) queueMaxTime = queueListTimeEnd[i];
             if (queueListTimeStart[i] <= queueElapsedTime && queueElapsedTime <= queueListTimeEnd[i]) {
-                // Run a certain action. Parameters will be shipped to the robot class along with the command.
+                // Run a certain action. Parameters will be shipped to the handler class along with the command.
                 switch (queueListActions[i]) {
                     case PREPARE_TURN:
                         ActionQueueHandler.queuePrepare_Turn(queueListTimeEnd[i],queueListParam1[i],queueListParam2[i]);
                         break;
                     case SWERVE:
                         ActionQueueHandler.queueSwerve(queueListTimeEnd[i],queueListParam1[i],queueListParam2[i],queueListParam3[i]);
+						break;
+					case DRIVE_STRAIGHT:
+						ActionQueueHandler.queueDrive_Straight(queueListTimeEnd[i],queueListParam1[i]);
+						break;
+					case TURN_TO_ANGLE:
+						ActionQueueHandler.queueTurn_To_Angle(queueListTimeEnd[i], queueListParam1[i]);
 						break;
 					default:
                         break;
