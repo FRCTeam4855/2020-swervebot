@@ -16,7 +16,6 @@ package frc.robot;
 import java.util.ArrayList;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
-import com.ctre.phoenix.motorcontrol.SensorCollection;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 import com.kauailabs.navx.frc.AHRS;
@@ -37,7 +36,7 @@ public class Robot extends TimedRobot {
 	
 	final double CONTROL_SPEEDREDUCTION = .6; 	  			  	// teleop drivetrain inputs are multiplied by this number when turbo is NOT engaged
 	final double CONTROL_SPEEDREDUCTION_PRECISION = 3.2;		// teleop drivetrain inputs are divided by this number when precision trigger is engaged
-	final double CONTROL_DEADZONE = 0.20;       			    // minimum value before joystick inputs will be considered on the swerves
+	final double CONTROL_DEADZONE = 0.23;       			    // minimum value before joystick inputs will be considered on the swerves
 	final boolean CONTROL_AUTOFAULT_HANDLE = false;				// whether or not the robot will automatically react to a faulty wheel and flip to tank drive
 
 	boolean INTERFACE_SINGLEDRIVER = false;  		  			// whether or not to enable or disable single driver input (press START to switch between controllers)
@@ -129,14 +128,25 @@ public class Robot extends TimedRobot {
 				if (!controlWorking.getRawButton(Utility.BUTTON_RB) && controlWorking.getRawAxis(2) < .7) jRcw *= CONTROL_SPEEDREDUCTION;
 				if (controlWorking.getRawAxis(2) >= .7) jRcw /= CONTROL_SPEEDREDUCTION_PRECISION;
 
-				if (reverseRotate) {jRcw = -jRcw;}
-				//if (jFwd != 0 && jStr != 0 && jRcw != 0) swerve(jFwd, jStr, jRcw, driverOriented); // the conditional here made the wheels NOT turn to 0,0,0
-				// Pull from override information
-				if (overrideFWD != 0) jFwd = overrideFWD;
-				if (overrideSTR != 0) jStr = overrideSTR;
-				if (overrideRCW != 0) jRcw = overrideRCW;
+				if (reverseRotate) jRcw = -jRcw;
+				boolean turnWheels;				// whether or not the wheels should attempt to spin at all
+				if ((jFwd != 0 && jStr != 0 && jRcw != 0)) turnWheels = false; else turnWheels = true;
 				
-				swerve(jFwd, jStr, jRcw, driverOriented);
+				// Pull from override information
+				if (overrideFWD != 0) {
+					jFwd = overrideFWD;
+					turnWheels = true;
+				}
+				if (overrideSTR != 0) {
+					jStr = overrideSTR;
+					turnWheels = true;
+				}
+				if (overrideRCW != 0) {
+					jRcw = overrideRCW;
+					turnWheels = true;
+				}
+				
+				if (turnWheels && !controlDriver.getRawButton(Utility.BUTTON_X)) swerve(jFwd, jStr, jRcw, driverOriented);
 			}
 		} else {
 			// Emergency tank drive
@@ -192,8 +202,7 @@ public class Robot extends TimedRobot {
 		encoderSetpointD = wheel[3].calculateWheelAngle(a, c);
 		wheel[3].setSetpoint((int) encoderSetpointD);
 
-		// If a wheel calculated itself to a value above 1, reduce all wheel speeds
-		// TODO play with these lines of code. Try setting each wheel speed to Math.max(wheelSpeed, 1) instead
+		// If a wheel calculated itself to a value above 1, reduce all wheel speeds (?? idk what this really does)
 		max = Math.max(wheelSpeed1, Math.max(wheelSpeed2, Math.max(wheelSpeed3, wheelSpeed4)));
 		if (max > 1) {wheelSpeed1 /= max; wheelSpeed2 /= max; wheelSpeed3 /= max; wheelSpeed4 /= max;}
 		
@@ -282,6 +291,7 @@ public class Robot extends TimedRobot {
 	 * This function is called immediately when the robot is disabled
 	 */
 	public void disabledInit() {
+		Utility.cleanSlateAllWheels(wheel);
 		Utility.powerAllWheels(false, wheel);	
 		Utility.setAllPIDSetpoints(0, wheel);
 		aqHandler.killQueues();
@@ -434,6 +444,7 @@ public class Robot extends TimedRobot {
 		SmartDashboard.putNumber("Analog4:", wheel[3].getRawAnalog());
 		*/
 		readjust();
+		
 		//SmartDashboard.putNumber("Ultrasonic", getUltrasonicSensor());
 	}
 }

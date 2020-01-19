@@ -54,6 +54,7 @@ public class Utility {
 	/**
 	 * Turns on and off each of the robot's Wheel objects.
 	 * @param enabled True to enable, false to disable
+	 * @param wheel an array of Wheel objects
 	 */
 	public static void powerAllWheels(boolean enabled, Wheel[] wheel) {
 		for (Wheel w : wheel) {
@@ -63,6 +64,7 @@ public class Utility {
 
 	/**
 	 * Turns on each wheel with a clean slate. The encoder is reset, the math is reset, and all motors are shut off before starting up.
+	 * @param wheel an array of Wheel objects
 	 */
 	public static void cleanSlateAllWheels(Wheel[] wheel) {
 		for (Wheel w : wheel) {
@@ -72,8 +74,8 @@ public class Utility {
 
 	/**
 	 * Sets the setpoints for every Wheel object in the wheel array.
-	 * @param pids The array of PID Controllers to set
-	 * @param setpoint The setpoint
+	 * @param setpoint The setpoint to assign to every wheel
+	 * @param wheel an array of wheels
 	 */
 	public static void setAllPIDSetpoints(int setpoint, Wheel[] wheel) {
 		for (Wheel w : wheel) {

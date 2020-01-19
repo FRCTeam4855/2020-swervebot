@@ -38,9 +38,9 @@ public class Wheel {
 	private int faultySetpointTimer = -1;											// counts how long a disparity has existed between the PID setpoint and the encoder 
 	private boolean lockAtZero = false;												// whether the wheels should be locked at zero using the analog input or not
 
-	private double kP = 0.0071;
-	private double kI = 0.00008;
-	private double kD = 0.000056;
+	private double kP = 0.0089;		// formerly .0071
+	private double kI = 0.00000008;	// formerly .00008
+	private double kD = 0.0001;		// formerly .000056
 
 	/**
 	 * Creates a new wheel instance. There should only be four of these
@@ -65,7 +65,7 @@ public class Wheel {
 	public double calculateWheelAngle(double dL1, double dL2) {
 		
 		angleCalc = -(Math.atan2(dL1, dL2) * 180 / Math.PI) * ETD;	// DON'T TOUCH THIS
-		//if (angleCalc == 0) angleCalc = anglePrevious;	// if the angled is 0, set the angle to whatever the last one was
+		if (angleCalc == 0) angleCalc = anglePrevious;	// if the angled is 0, set the angle to whatever the last one was
 		
 		angleCalc += flipCorrection + flip;
 		
@@ -320,7 +320,7 @@ public class Wheel {
 		}
 
 		
-/*
+		/*
 		kP = SmartDashboard.getNumber("P", kP);
 		kI = SmartDashboard.getNumber("I", kI);
 		kD = SmartDashboard.getNumber("D", kD);
@@ -331,16 +331,13 @@ public class Wheel {
 		SmartDashboard.putNumber("I", kI);
 		SmartDashboard.putNumber("D", kD);
 
-		
-		
-
 		// PID tuning
 		PID.setP(kP);
 		PID.setI(kI);
-		PID.setD(kD);
+		PID.setD(kD);*/
 
 		// Put wheel stats on the SmartDashboard
-		*/
+		
 		SmartDashboard.putNumber("Wheel " + myID + "Encoder", getEncoderPosition());
 		SmartDashboard.putNumber("Wheel " + myID + "Setpoint", getSetpoint());
 		SmartDashboard.putBoolean("Wheel " + myID + "Fault", getFaulty());
