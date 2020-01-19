@@ -88,6 +88,9 @@ public class Robot extends TimedRobot {
 	Joystick controlOperator = new Joystick(1);			// the joystick responsible for operator controls
 	Joystick controlWorking;  							// the controller currently being read from, usually used just for one-driver control
 	
+	// Limelight
+	Limelight limelight = new Limelight();
+
 	// NavX Constructor
 	public static AHRS gyro = new AHRS(SPI.Port.kMXP);
 
@@ -382,6 +385,11 @@ public class Robot extends TimedRobot {
 			// Emergency tank drive mode
 			if (controlWorking.getRawButton(Utility.BUTTON_LSTICK) && controlWorking.getRawButton(Utility.BUTTON_RSTICK)) {
 				emergencyTank = !emergencyTank;
+			}
+
+			// Turn Limelight lamps off
+			if (controlWorking.getRawButtonPressed(Utility.BUTTON_RSTICK)) {
+				limelight.toggleLamp();
 			}
     	}
 

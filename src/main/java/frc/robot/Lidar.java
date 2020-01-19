@@ -10,7 +10,7 @@ public class Lidar {
     }
 
     public Lidar() {
-        device = new Counter(0);
+        device = new Counter(1);
         device.setMaxPeriod(1.00);
         device.setSemiPeriodMode(true);
         device.reset();
