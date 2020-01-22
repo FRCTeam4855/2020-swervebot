@@ -65,6 +65,7 @@ public class Wheel {
 	public double calculateWheelAngle(double dL1, double dL2) {
 		
 		angleCalc = -(Math.atan2(dL1, dL2) * 180 / Math.PI) * ETD;	// DON'T TOUCH THIS
+		// The below line makes the swerves generally efficient, however it makes completely straight FWD joystick inputs not turn the wheels at all
 		if (angleCalc == 0) angleCalc = anglePrevious;	// if the angled is 0, set the angle to whatever the last one was
 		
 		angleCalc += flipCorrection + flip;

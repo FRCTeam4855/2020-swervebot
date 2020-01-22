@@ -19,7 +19,14 @@ public class Utility {
 	final static int BUTTON_SELECT = 7;
 	final static int BUTTON_START = 8;
 	final static int BUTTON_LSTICK = 9;
-    final static int BUTTON_RSTICK = 10;
+	final static int BUTTON_RSTICK = 10;
+	
+	final static int AXIS_LSTICKX = 0;
+	final static int AXIS_RSTICKX = 4;
+	final static int AXIS_LSTICKY = 1;
+	final static int AXIS_RSTICKY = 5;
+	final static int AXIS_LT = 2;
+	final static int AXIS_RT = 3;
     
     /**
 	 * Returns a value based on sensor inputs.

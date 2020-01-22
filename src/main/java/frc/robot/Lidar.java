@@ -1,3 +1,8 @@
+// FRC TEAM 4855 ROBOT CODE
+// 2020 GAME INFINITE RECHARGE
+
+// Swerve-bot code: Lidar range finder class
+
 package frc.robot;
 
 import edu.wpi.first.wpilibj.Counter;

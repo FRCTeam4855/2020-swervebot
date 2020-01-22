@@ -33,17 +33,14 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 public class Robot extends TimedRobot {
 			
 	// CONTROL CONSTANTS
-	
+	//=======================================
 	final double CONTROL_SPEEDREDUCTION = .6; 	  			  	// teleop drivetrain inputs are multiplied by this number when turbo is NOT engaged
 	final double CONTROL_SPEEDREDUCTION_PRECISION = 3.2;		// teleop drivetrain inputs are divided by this number when precision trigger is engaged
 	final double CONTROL_DEADZONE = 0.23;       			    // minimum value before joystick inputs will be considered on the swerves
 	final boolean CONTROL_AUTOFAULT_HANDLE = false;				// whether or not the robot will automatically react to a faulty wheel and flip to tank drive
-
 	boolean INTERFACE_SINGLEDRIVER = false;  		  			// whether or not to enable or disable single driver input (press START to switch between controllers)
-	//=======================================
 	
 	// OTHER CONSTANTS
-
 	final static double ROBOT_WIDTH = 29;
 	final static double ROBOT_LENGTH = 29;
 	final static double ROBOT_R = Math.sqrt(Math.pow(ROBOT_LENGTH, 2) + Math.pow(ROBOT_WIDTH, 2));
@@ -53,7 +50,6 @@ public class Robot extends TimedRobot {
 	final static double IN_TO_ENC = 10.394;
 
 	// BEGINNING VARIABLES
-	
 	int wheelTune = 0; 							// Remembers what wheel we are tweaking in test mode
 	int singleDriverController = 0; 			// port number of controller to operate
 	boolean emergencyTank = false; 				// true if the robot is in emergency tank drive mode
@@ -74,7 +70,7 @@ public class Robot extends TimedRobot {
   	//=======================================
   
 	// DEFINING HARDWARE
-
+	//=======================================
 	// Define swerve wheel classes
 	static Wheel wheel[] = {
 		new Wheel(new TalonSRX(1), new VictorSPX(6), new AnalogInput(1), 0),// front right
@@ -87,9 +83,6 @@ public class Robot extends TimedRobot {
 	Joystick controlDriver = new Joystick(0);			// the joystick responsible for driving
 	Joystick controlOperator = new Joystick(1);			// the joystick responsible for operator controls
 	Joystick controlWorking;  							// the controller currently being read from, usually used just for one-driver control
-	
-	// Limelight
-	Limelight limelight = new Limelight();
 
 	// NavX Constructor
 	public static AHRS gyro = new AHRS(SPI.Port.kMXP);
@@ -97,8 +90,17 @@ public class Robot extends TimedRobot {
 	// Ultrasonic Sensor Constructor
 	AnalogInput ultrasonic = new AnalogInput(4);
 	ArrayList<Double> usNoise = new ArrayList<Double>(10);
-	Lidar lidar = new Lidar();
+
+	// Shooter Constructor
+	Shooter shooter = new Shooter(10);
+
+	// Intake Constructor
+	Intake intake = new Intake(0, 1);
+
+	//=======================================
 	
+	// COMPUTATIONAL SOFTWARE STUFF
+	//=======================================
 	// Action queues
 	ActionQueueHandler aqHandler = new ActionQueueHandler(new ActionQueue[] {
 		new ActionQueue(true),	// QUEUE_ANGLE
@@ -132,7 +134,7 @@ public class Robot extends TimedRobot {
 				if (controlWorking.getRawAxis(2) >= .7) jRcw /= CONTROL_SPEEDREDUCTION_PRECISION;
 
 				if (reverseRotate) jRcw = -jRcw;
-				boolean turnWheels;				// whether or not the wheels should attempt to spin at all
+				boolean turnWheels;					// whether or not the wheels should attempt to spin to a new angle
 				if ((jFwd != 0 && jStr != 0 && jRcw != 0)) turnWheels = false; else turnWheels = true;
 				
 				// Pull from override information
@@ -297,7 +299,9 @@ public class Robot extends TimedRobot {
 		Utility.cleanSlateAllWheels(wheel);
 		Utility.powerAllWheels(false, wheel);	
 		Utility.setAllPIDSetpoints(0, wheel);
+		shooter.killFlywheel();
 		aqHandler.killQueues();
+		intake.stop();
 	}
 	
 	/**
@@ -315,6 +319,7 @@ public class Robot extends TimedRobot {
 	 */
 	@Override
 	public void autonomousPeriodic() {
+		// haha it's empty
 	}
 	
 	/**
@@ -340,21 +345,17 @@ public class Robot extends TimedRobot {
 		if (INTERFACE_SINGLEDRIVER == false || (INTERFACE_SINGLEDRIVER == true && singleDriverController == 0)) {
 			controlWorking = controlDriver;
 			
-			// Drive the robot
+			// Control the robot's drivetrain
 			drive();
 			
 			// Start the Action Queue for angling the robot to an angle
 			if (controlWorking.getRawButton(Utility.BUTTON_LB)) aqHandler.getQueue(QUEUE_ANGLE).queueStart();
-			
-			// Start the Action Queue for driving the robot straight
-			if (controlWorking.getRawButton(Utility.BUTTON_LSTICK)) aqHandler.getQueue(QUEUE_DRIVESTRAIGHT).queueStart();
 
 			// Reset the gyroscope
 			if (controlWorking.getRawButton(Utility.BUTTON_Y)) gyro.reset();
 			
-			// Reset the wheels
+			// Reset the wheels using encoders on the wheels
 			if (controlWorking.getRawButton(Utility.BUTTON_X)) {
-				// Old version of resetting wheels
 				Utility.resetAllWheels(wheel);
 				Utility.setAllPIDSetpoints(0, wheel);
 			}
@@ -373,7 +374,6 @@ public class Robot extends TimedRobot {
 			if (controlWorking.getRawButtonPressed(Utility.BUTTON_SELECT) && controlWorking.getRawButtonPressed(Utility.BUTTON_START)) {
 				if (emergencyReadjust) {
 					emergencyReadjust = false;
-					// TODO clean slate protocol here
 					Utility.cleanSlateAllWheels(wheel);
 				} else {
 					emergencyReadjust = true;
@@ -386,11 +386,6 @@ public class Robot extends TimedRobot {
 			if (controlWorking.getRawButton(Utility.BUTTON_LSTICK) && controlWorking.getRawButton(Utility.BUTTON_RSTICK)) {
 				emergencyTank = !emergencyTank;
 			}
-
-			// Turn Limelight lamps off
-			if (controlWorking.getRawButtonPressed(Utility.BUTTON_RSTICK)) {
-				limelight.toggleLamp();
-			}
     	}
 
 		// End DRIVER CONTROL
@@ -398,6 +393,43 @@ public class Robot extends TimedRobot {
 
 		if (INTERFACE_SINGLEDRIVER == false || (INTERFACE_SINGLEDRIVER == true && singleDriverController == 1)) {
 			if (INTERFACE_SINGLEDRIVER == false) controlWorking = controlOperator; else controlWorking = controlDriver;
+
+			// Run the shooter at speed 1 of 1200 RPM
+			if (controlWorking.getRawButtonPressed(Utility.BUTTON_A)) {
+				shooter.setFlywheelSpeed(1200);
+			}
+
+			// Run the shooter at speed 1 of 2000 RPM
+			if (controlWorking.getRawButtonPressed(Utility.BUTTON_X)) {
+				shooter.setFlywheelSpeed(2000);
+			}
+
+			// Run the shooter at speed 1 of 2800 RPM
+			if (controlWorking.getRawButtonPressed(Utility.BUTTON_Y)) {
+				shooter.setFlywheelSpeed(2800);
+			}
+
+			// Kill the shooter
+			if (controlWorking.getRawButtonPressed(Utility.BUTTON_B)) {
+				shooter.killFlywheel();
+			}
+
+			// Run the shooter
+			if (shooter.isRunning()) {
+				if (shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint())) {
+					// Run code here for shoving balls into the shooter
+				}
+			}
+
+			// Run the intake wheels
+			if (controlWorking.getRawAxis(Utility.AXIS_LT) > .1) {
+				intake.setIntakeWheels(controlWorking.getRawAxis(Utility.AXIS_LT) * .5);	// halved to reduce speed
+			} else intake.stopIntakeWheels();
+
+			// Run the pivot arm
+			if (Math.abs(controlWorking.getRawAxis(Utility.AXIS_LSTICKY)) > .1) {
+				intake.setPivot(controlWorking.getRawAxis(Utility.AXIS_LSTICKY));
+			} else intake.stopPivot();
 		}
 
 		// End OPERATOR DRIVING
@@ -415,10 +447,9 @@ public class Robot extends TimedRobot {
 		aqHandler.runQueues();
 		
 		// Dashboard dump
-		SmartDashboard.putNumber("ControllerID",singleDriverController);
+		SmartDashboard.putNumber("ControllerID", singleDriverController);
 		SmartDashboard.putNumber("YawAxis", gyro.getYaw());
-		SmartDashboard.putBoolean("DriverOriented",driverOriented);
-		SmartDashboard.putNumber("Lidar Units", lidar.getDistance(Lidar.Unit.INCHES));
+		SmartDashboard.putBoolean("DriverOriented", driverOriented);
 		
 		// End UNIVERSAL FUNCTIONS
 	}
@@ -433,26 +464,6 @@ public class Robot extends TimedRobot {
 	 */
 	@Override
 	public void testPeriodic() {
-		/*
-		SmartDashboard.putNumber("Joystick y axis", controlDriver.getRawAxis(1));
-		
-		SmartDashboard.putNumber("Encoder1:", wheel[0].getEncoderPosition());
-		SmartDashboard.putNumber("Encoder2:", wheel[1].getEncoderPosition());
-		SmartDashboard.putNumber("Encoder3:", wheel[2].getEncoderPosition());
-		SmartDashboard.putNumber("Encoder4:", wheel[3].getEncoderPosition());
-
-		SmartDashboard.putBoolean("AnalogIsTripped1:", wheel[0].isZero());
-		SmartDashboard.putBoolean("AnalogIsTripped2:", wheel[1].isZero());
-		SmartDashboard.putBoolean("AnalogIsTripped3:", wheel[2].isZero());
-		SmartDashboard.putBoolean("AnalogIsTripped4:", wheel[3].isZero());
-		
-		SmartDashboard.putNumber("Analog1:", wheel[0].getRawAnalog());
-		SmartDashboard.putNumber("Analog2:", wheel[1].getRawAnalog());
-		SmartDashboard.putNumber("Analog3:", wheel[2].getRawAnalog());
-		SmartDashboard.putNumber("Analog4:", wheel[3].getRawAnalog());
-		*/
 		readjust();
-		
-		//SmartDashboard.putNumber("Ultrasonic", getUltrasonicSensor());
 	}
 }
