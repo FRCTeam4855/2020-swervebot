@@ -72,11 +72,17 @@ public class Robot extends TimedRobot {
 	// DEFINING HARDWARE
 	//=======================================
 	// Define swerve wheel classes
-	static Wheel wheel[] = {
+	/*static Wheel wheel[] = {
 		new Wheel(new TalonSRX(1), new VictorSPX(6), new AnalogInput(1), 0),// front right
 		new Wheel(new TalonSRX(0), new VictorSPX(5), new AnalogInput(0), 1),// front left
 		new Wheel(new TalonSRX(2), new VictorSPX(7), new AnalogInput(2), 2),// back left
 		new Wheel(new TalonSRX(3), new VictorSPX(8), new AnalogInput(3), 3)// back right
+	};*/
+	static Wheel wheel[] = {
+		new Wheel(new TalonSRX(2), new VictorSPX(7), new AnalogInput(2), 2),// front right
+		new Wheel(new TalonSRX(3), new VictorSPX(8), new AnalogInput(3), 3),// front left
+		new Wheel(new TalonSRX(1), new VictorSPX(6), new AnalogInput(1), 0),// back right
+		new Wheel(new TalonSRX(0), new VictorSPX(5), new AnalogInput(0), 1)// back left	
 	};
 	
 	// Xbox controllers
@@ -92,11 +98,10 @@ public class Robot extends TimedRobot {
 	ArrayList<Double> usNoise = new ArrayList<Double>(10);
 
 	// Shooter Constructor
-	Shooter shooter = new Shooter(10);
+	Shooter shooter = new Shooter(9, 0);
 
 	// Intake Constructor
-	Intake intake = new Intake(0, 1);
-
+	Intake intake = new Intake(2, 1);
 	//=======================================
 	
 	// COMPUTATIONAL SOFTWARE STUFF
@@ -300,6 +305,7 @@ public class Robot extends TimedRobot {
 		Utility.powerAllWheels(false, wheel);	
 		Utility.setAllPIDSetpoints(0, wheel);
 		shooter.killFlywheel();
+		shooter.killFeeder();
 		aqHandler.killQueues();
 		intake.stop();
 	}
@@ -409,6 +415,7 @@ public class Robot extends TimedRobot {
 				shooter.setFlywheelSpeed(2800);
 			}
 
+			
 			// Kill the shooter
 			if (controlWorking.getRawButtonPressed(Utility.BUTTON_B)) {
 				shooter.killFlywheel();
@@ -421,9 +428,14 @@ public class Robot extends TimedRobot {
 				}
 			}
 
+			// Run the feeder
+			if (controlWorking.getRawAxis(Utility.AXIS_RT) > .1) {
+				shooter.runFeeder(controlWorking.getRawAxis(Utility.AXIS_RT));
+			} else shooter.killFeeder();
+
 			// Run the intake wheels
 			if (controlWorking.getRawAxis(Utility.AXIS_LT) > .1) {
-				intake.setIntakeWheels(controlWorking.getRawAxis(Utility.AXIS_LT) * .5);	// halved to reduce speed
+				intake.setIntakeWheels(controlWorking.getRawAxis(Utility.AXIS_LT));	// halved to reduce speed
 			} else intake.stopIntakeWheels();
 
 			// Run the pivot arm

@@ -9,14 +9,18 @@ public class Intake {
     
     /**
      * Constructs an instance of Intake. The intake wheels are driven by a VictorSP and the pivot motors are driven by 2 Sparks joined by a PWM.
-     * @param pivotPort
-     * @param wheelsPort
+     * @param pivotPort the PWM port for the pivot arm
+     * @param wheelsPort the PWM port for the intake wheels
      */
     public Intake(int pivotPort, int wheelsPort) {
         pivot = new Spark(pivotPort);
         wheels = new VictorSP(wheelsPort);
     }
 
+    /**
+     * Sets the intake wheels to a specified speed.
+     * @param speed percent speed
+     */
     public void setIntakeWheels(double speed) {
         wheels.set(speed);
     }

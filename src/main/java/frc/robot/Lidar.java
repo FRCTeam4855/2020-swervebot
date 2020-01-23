@@ -21,12 +21,17 @@ public class Lidar {
         device.reset();
     }
 
+    /**
+     * This command gets the distance to the nearest object.
+     * @param units an enum of either inches or centimeters
+     * @return double in the desired unit of distance
+     */
     public double getDistance(Unit units) {
         double dist = 0;
         if (device.get() < 1) {
             dist = 0;
         } else {
-            dist = (device.getPeriod()*1000000.0/10.0) - off;
+            dist = (device.getPeriod() * 1000000.0 / 10.0) - off;
         }
         if (units == Unit.INCHES) return dist * .393701; else return dist;
     }

@@ -11,6 +11,8 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.ControlType;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
+import edu.wpi.first.wpilibj.VictorSP;
+
 public class Shooter {
     // Define instance variables
     private double velocitySetpoint = 0;        // the desired velocity setpoint for the flywheel
@@ -28,16 +30,19 @@ public class Shooter {
     double kF = .000173;
 
     // Define hardware
+    private VictorSP feeder;
     private CANSparkMax flywheel; 
     private CANPIDController PID;
     private CANEncoder encoder;
 
     /**
      * Constructs the Shooter class.
-     * @param id the ID of the CAN Spark Max that the flywheel runs off of
+     * @param sparkMaxId the ID of the CAN Spark Max that the flywheel runs off of
+     * @param feederId the PWM ID of the feeder motor controller
      */
-    public Shooter(int id) {
-        flywheel = new CANSparkMax(id, MotorType.kBrushless);
+    public Shooter(int sparkMaxId, int feederId) {
+        flywheel = new CANSparkMax(sparkMaxId, MotorType.kBrushless);
+        feeder = new VictorSP(feederId);
         encoder = flywheel.getEncoder();
         PID = flywheel.getPIDController();
         PID.setOutputRange(-.85, .85);
@@ -108,5 +113,20 @@ public class Shooter {
      */
     public boolean isRunning() {
         return isRunning;
+    }
+
+    /**
+     * Runs the feeder mechanism. This is done manually for now.
+     * @param speed the speed to run the feeder motor at
+     */
+    public void runFeeder(double speed) {
+        feeder.set(speed);
+    }
+
+    /**
+     * Kills the feeder motor.
+     */
+    public void killFeeder() {
+        feeder.set(0);
     }
 }

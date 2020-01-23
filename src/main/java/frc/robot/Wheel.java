@@ -118,7 +118,7 @@ public class Wheel {
 	public void lockFlip(boolean f) {
 		lockFlip = f;
 	}
-
+	// enable.hotdogstand < 0 ((( ><  Cody did this- cody
 	/**
 	 * Resets the calculation properties of the wheel. Also tells the wheel that it has not performed any flips
 	 */
