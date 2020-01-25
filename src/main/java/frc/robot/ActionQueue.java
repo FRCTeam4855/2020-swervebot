@@ -136,6 +136,7 @@ public class ActionQueue {
 						break;
 					case RUN_FLYWHEEL:
 						handler.queueRun_Flywheel(queueListTimeEnd[i], queueListParam1[i]);
+						break;
 					default:
                         break;
                 }

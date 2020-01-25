@@ -413,17 +413,17 @@ public class Robot extends TimedRobot {
 			if (INTERFACE_SINGLEDRIVER == false) controlWorking = controlOperator; else controlWorking = controlDriver;
 
 			// Run the shooter at speed 1 of 3000 RPM
-			if (controlWorking.getRawButtonPressed(Utility.BUTTON_A)) {
+			if (controlWorking.getRawButton(Utility.BUTTON_A)) {
 				shooter.setFlywheelSpeed(3000);
 			}
 
 			// Run the shooter at speed 1 of 3400 RPM
-			if (controlWorking.getRawButtonPressed(Utility.BUTTON_X)) {
+			if (controlWorking.getRawButton(Utility.BUTTON_X)) {
 				shooter.setFlywheelSpeed(3400);
 			}
 
 			// Run the shooter at speed 1 of 4000 RPM
-			if (controlWorking.getRawButtonPressed(Utility.BUTTON_Y)) {
+			if (controlWorking.getRawButton(Utility.BUTTON_Y)) {
 				shooter.setFlywheelSpeed(4000);
 			}
 
@@ -439,11 +439,11 @@ public class Robot extends TimedRobot {
 
 			// Run the shooter
 			if (shooter.isRunning()) {
-				if (shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint())) {
+				/*if (shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint())) {
 					// Run code here for shoving balls into the shooter
 				}
 				if (controlWorking.getPOV() == 0) shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint() + 3);
-				if (controlWorking.getPOV() == 180) shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint() - 3);
+				if (controlWorking.getPOV() == 180) shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint() - 3);*/
 			}
 
 			// Run the feeder
@@ -484,7 +484,9 @@ public class Robot extends TimedRobot {
 		SmartDashboard.putNumber("PitchAxis", gyro.getPitch());
 		SmartDashboard.putNumber("RollAxis", gyro.getRoll());
 		SmartDashboard.putBoolean("DriverOriented", driverOriented);
-		
+		SmartDashboard.putNumber("Flywheel Velocity", shooter.getFlywheelVelocity());
+		SmartDashboard.putNumber("Flywheel Setpoint", shooter.getFlywheelSetpoint());
+
 		// End UNIVERSAL FUNCTIONS
 	}
 

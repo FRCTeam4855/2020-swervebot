@@ -12,22 +12,23 @@ import com.revrobotics.ControlType;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
 import edu.wpi.first.wpilibj.VictorSP;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class Shooter {
     // Define instance variables
     private double velocitySetpoint = 0;        // the desired velocity setpoint for the flywheel
     private int speedUpTime = -1;               // the amount of program ticks remaining for the shooter to be fed by percentage input
     private boolean isRunning = false;          // whether or not the flywheel is running
-    private final int MAX_SPEEDUP_TICKS = 100;  // the flywheel will have 100 ticks to increase the speed to roughly where it needs to be via percent output
+    private final int MAX_SPEEDUP_TICKS = 90;   // the flywheel will have 90 ticks to increase the speed to roughly where it needs to be via percent output
     private final int ACCEPTABLE_ERROR = 40;    // the acceptable error to reasonably state that the shooter is ready to shoot
     private enum Phase {
         OFF, SPEED_UP, LOCK_IN
     }
     private Phase currentPhase = Phase.OFF;
-    double kP = .00044;
+    double kP = .00044;     // originally .00044
     double kI = 0;
     double kD = .0034;
-    double kF = .000173;
+    double kF = .000173;    // originally .000173
 
     // Define hardware
     private VictorSP feeder;
@@ -45,7 +46,7 @@ public class Shooter {
         feeder = new VictorSP(feederId);
         encoder = flywheel.getEncoder();
         PID = flywheel.getPIDController();
-        PID.setOutputRange(-.85, .85);
+        PID.setOutputRange(-1, 1);
         PID.setP(kP);
         PID.setI(kI);
         PID.setD(kD);
@@ -59,12 +60,27 @@ public class Shooter {
      */
     public boolean setFlywheelSpeed(double setpoint) {
         velocitySetpoint = setpoint;
+        switch (currentPhase) {
+            case SPEED_UP:
+                SmartDashboard.putString("Phase", "SPEED_UP");
+                break;
+            case OFF:
+                SmartDashboard.putString("Phase", "OFF");
+                break;
+            case LOCK_IN:
+                SmartDashboard.putString("Phase", "LOCK_IN");
+                break;
+            default:
+                SmartDashboard.putString("Phase", "???");
+                break;
+        }
         if (currentPhase == Phase.OFF) {
             currentPhase = Phase.SPEED_UP;
             speedUpTime = MAX_SPEEDUP_TICKS;
         }
+        // TODO getting consistent error messages: [CAN SPARK MAX] timed out while waiting for Periodic Status 1, Periodic Status 1
         if (speedUpTime > -1 && currentPhase == Phase.SPEED_UP) {
-            double percentOutput = -((setpoint / 5100) - .025);
+            double percentOutput = -((setpoint / 5100) - .025); // formerly (setpoint / 5100) - .025
             flywheel.set(percentOutput);
             speedUpTime --;
             if (speedUpTime <= 0) {
@@ -75,7 +91,6 @@ public class Shooter {
         if (currentPhase == Phase.LOCK_IN) {
             PID.setReference(-setpoint, ControlType.kVelocity);
             if (Math.abs(setpoint + encoder.getVelocity()) < ACCEPTABLE_ERROR) return true; else return false;
-            
         }
         return false;
     }
