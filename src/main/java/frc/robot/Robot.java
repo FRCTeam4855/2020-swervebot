@@ -400,22 +400,22 @@ public class Robot extends TimedRobot {
 		if (INTERFACE_SINGLEDRIVER == false || (INTERFACE_SINGLEDRIVER == true && singleDriverController == 1)) {
 			if (INTERFACE_SINGLEDRIVER == false) controlWorking = controlOperator; else controlWorking = controlDriver;
 
-			// Run the shooter at speed 1 of 1200 RPM
+			// Run the shooter at speed 1 of 3000 RPM
 			if (controlWorking.getRawButtonPressed(Utility.BUTTON_A)) {
-				shooter.setFlywheelSpeed(1200);
+				shooter.setFlywheelSpeed(3000);
 			}
 
-			// Run the shooter at speed 1 of 2000 RPM
+			// Run the shooter at speed 1 of 3400 RPM
 			if (controlWorking.getRawButtonPressed(Utility.BUTTON_X)) {
-				shooter.setFlywheelSpeed(2000);
+				shooter.setFlywheelSpeed(3400);
 			}
 
-			// Run the shooter at speed 1 of 2800 RPM
+			// Run the shooter at speed 1 of 4000 RPM
 			if (controlWorking.getRawButtonPressed(Utility.BUTTON_Y)) {
-				shooter.setFlywheelSpeed(2800);
+				shooter.setFlywheelSpeed(4000);
 			}
 
-			
+
 			// Kill the shooter
 			if (controlWorking.getRawButtonPressed(Utility.BUTTON_B)) {
 				shooter.killFlywheel();
@@ -426,16 +426,20 @@ public class Robot extends TimedRobot {
 				if (shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint())) {
 					// Run code here for shoving balls into the shooter
 				}
+				if (controlWorking.getPOV() == 0) shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint() + 3);
+				if (controlWorking.getPOV() == 180) shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint() - 3);
 			}
 
 			// Run the feeder
-			if (controlWorking.getRawAxis(Utility.AXIS_RT) > .1) {
-				shooter.runFeeder(controlWorking.getRawAxis(Utility.AXIS_RT));
+			if (Math.abs(controlWorking.getRawAxis(Utility.AXIS_RSTICKY)) > .1) {
+				shooter.runFeeder(-controlWorking.getRawAxis(Utility.AXIS_RSTICKY));
 			} else shooter.killFeeder();
 
 			// Run the intake wheels
 			if (controlWorking.getRawAxis(Utility.AXIS_LT) > .1) {
-				intake.setIntakeWheels(controlWorking.getRawAxis(Utility.AXIS_LT));	// halved to reduce speed
+				intake.setIntakeWheels(controlWorking.getRawAxis(Utility.AXIS_LT));
+			} else if (controlWorking.getRawButton(Utility.BUTTON_LSTICK)) {
+				intake.setIntakeWheels(-.4);
 			} else intake.stopIntakeWheels();
 
 			// Run the pivot arm
@@ -448,7 +452,7 @@ public class Robot extends TimedRobot {
 		// Begin UNIVERSAL FUNCTIONS
 
 		// Toggle drive mode if single driver interface is active
-		if (INTERFACE_SINGLEDRIVER == true && controlDriver.getRawButton(Utility.BUTTON_START) == true) {
+		if (INTERFACE_SINGLEDRIVER == true && controlDriver.getRawButtonPressed(Utility.BUTTON_START) == true) {
 			if (singleDriverController == 0) singleDriverController = 1; else singleDriverController = 0;
 		}
 		
@@ -461,6 +465,8 @@ public class Robot extends TimedRobot {
 		// Dashboard dump
 		SmartDashboard.putNumber("ControllerID", singleDriverController);
 		SmartDashboard.putNumber("YawAxis", gyro.getYaw());
+		SmartDashboard.putNumber("PitchAxis", gyro.getPitch());
+		SmartDashboard.putNumber("RollAxis", gyro.getRoll());
 		SmartDashboard.putBoolean("DriverOriented", driverOriented);
 		
 		// End UNIVERSAL FUNCTIONS
