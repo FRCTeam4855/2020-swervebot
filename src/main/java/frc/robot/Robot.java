@@ -107,14 +107,17 @@ public class Robot extends TimedRobot {
 	// COMPUTATIONAL SOFTWARE STUFF
 	//=======================================
 	// Action queues
-	ActionQueueHandler aqHandler = new ActionQueueHandler(new ActionQueue[] {
-		new ActionQueue(true),	// QUEUE_ANGLE
-		new ActionQueue(true)	// QUEUE_DRIVESTRAIGHT
-	});
+	private ActionQueueHandler aqHandler;
+	private ActionQueue[] aqArray = new ActionQueue[] {
+		new ActionQueue(aqHandler, true),	// QUEUE_ANGLE
+		new ActionQueue(aqHandler, true),	// QUEUE_DRIVESTRAIGHT
+		new ActionQueue(aqHandler, false)	// QUEUE_SHOOTVOLLEY
+	};
 
 	// Reference IDs for action queues
 	final int QUEUE_ANGLE = 0;
 	final int QUEUE_DRIVESTRAIGHT = 1;
+	final int QUEUE_SHOOTVOLLEY = 2;
 	//=======================================
 
 	// End of variable definitions
@@ -290,11 +293,20 @@ public class Robot extends TimedRobot {
 	 */
 	@Override
 	public void robotInit() {
+		aqHandler = new ActionQueueHandler(aqArray, shooter, intake);
+
 		// Feed action queues, they hunger for your command
 
 		aqHandler.getQueue(QUEUE_ANGLE).queueFeed(ActionQueue.Command.TURN_TO_ANGLE, 1, 80, false, 0, 0, 0);
 
 		aqHandler.getQueue(QUEUE_DRIVESTRAIGHT).queueFeed(ActionQueue.Command.DRIVE_STRAIGHT, 1, 120, false, 0, 0, 0);
+
+		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.RUN_FLYWHEEL, 1, 600, true, 3600, 0, 0);
+		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.FEED_BALL, 120, 170, true, 0, 0, 0);
+		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.FEED_BALL, 210, 260, true, 0, 0, 0);
+		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.FEED_BALL, 300, 350, true, 0, 0, 0);
+		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.FEED_BALL, 390, 440, true, 0, 0, 0);
+		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.FEED_BALL, 480, 530, true, 0, 0, 0);
 	}
 	
 	/**
@@ -415,6 +427,10 @@ public class Robot extends TimedRobot {
 				shooter.setFlywheelSpeed(4000);
 			}
 
+			// Fire off a volley of 5 shots
+			if (controlWorking.getRawButtonPressed(Utility.BUTTON_LB)) {
+				aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueStart();
+			}
 
 			// Kill the shooter
 			if (controlWorking.getRawButtonPressed(Utility.BUTTON_B)) {

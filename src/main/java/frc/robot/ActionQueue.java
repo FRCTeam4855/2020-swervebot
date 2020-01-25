@@ -11,7 +11,7 @@ package frc.robot;
 public class ActionQueue {
 
 	enum Command {
-		DEAD, PREPARE_TURN, SWERVE, DRIVE_STRAIGHT, TURN_TO_ANGLE, SHOOT_LOW, SHOOT_HIGH;
+		DEAD, PREPARE_TURN, SWERVE, DRIVE_STRAIGHT, TURN_TO_ANGLE, FEED_BALL, RUN_FLYWHEEL;
 	}
 
 	Command queueListActions [] = new Command [20];		// action ID to perform
@@ -28,13 +28,17 @@ public class ActionQueue {
 
 	private int queueMaxTime = -1;						// largest end time in queue
 	private int queueLength = 0;						// queue length
+
+	private ActionQueueHandler handler;
 	
 	/**
 	 * Constructs an ActionQueue.
+	 * @param h the reference to this ActionQueue's handler object
 	 * @param overrides whether or not the action queue should zero out any swerve overrides when it is complete
 	 */
-	public ActionQueue(boolean overrides) {
+	public ActionQueue(ActionQueueHandler h, boolean overrides) {
 		queueUsesSwerveOverrides = overrides;
+		handler = h;
 	}
 
 	/**
@@ -42,6 +46,7 @@ public class ActionQueue {
 	 * @param action the action ID to feed
 	 * @param timeStart the elapsed time within the queue in which to start the command
 	 * @param timeEnd the elapsed time within the queue in which to end the command
+	 * @param killMotor whether or not an action's associated motors should be set to 0 after the action has completed
 	 * @param param1 the 1st parameter
 	 * @param param2 the 2nd parameter
 	 * @param param3 the 3rd parameter
@@ -115,17 +120,22 @@ public class ActionQueue {
                 // Run a certain action. Parameters will be shipped to the handler class along with the command.
                 switch (queueListActions[i]) {
                     case PREPARE_TURN:
-                        ActionQueueHandler.queuePrepare_Turn(queueListTimeEnd[i],queueListParam1[i],queueListParam2[i]);
+                        handler.queuePrepare_Turn(queueListTimeEnd[i],queueListParam1[i],queueListParam2[i]);
                         break;
                     case SWERVE:
-                        ActionQueueHandler.queueSwerve(queueListTimeEnd[i],queueListParam1[i],queueListParam2[i],queueListParam3[i]);
+                        handler.queueSwerve(queueListTimeEnd[i],queueListParam1[i],queueListParam2[i],queueListParam3[i]);
 						break;
 					case DRIVE_STRAIGHT:
-						ActionQueueHandler.queueDrive_Straight(queueListTimeEnd[i],queueListParam1[i]);
+						handler.queueDrive_Straight(queueListTimeEnd[i],queueListParam1[i]);
 						break;
 					case TURN_TO_ANGLE:
-						ActionQueueHandler.queueTurn_To_Angle(queueListTimeEnd[i], queueListParam1[i]);
+						handler.queueTurn_To_Angle(queueListTimeEnd[i], queueListParam1[i]);
 						break;
+					case FEED_BALL:
+						handler.queueFeed_Ball(queueListTimeEnd[i]);
+						break;
+					case RUN_FLYWHEEL:
+						handler.queueRun_Flywheel(queueListTimeEnd[i], queueListParam1[i]);
 					default:
                         break;
                 }
@@ -133,6 +143,12 @@ public class ActionQueue {
 			if (queueElapsedTime == queueListTimeEnd[i] + 1 && queueListKillMotor[i]) {
 				// Kill the corresponding motor if applicable
 				switch (queueListActions[i]) {
+					case FEED_BALL:
+						handler.shooter.killFeeder();
+						break;
+					case RUN_FLYWHEEL:
+						handler.shooter.killFlywheel();
+						break;
 					default:
 						break;
 				}
