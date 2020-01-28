@@ -15,6 +15,7 @@ import edu.wpi.first.wpiutil.math.MathUtil;
 public class ActionQueueHandler {
     private ActionQueue[] queues;
 	private static PIDController PIDRotate = new PIDController(.0077, 0, 0.0007);
+	private static PIDController PIDLimelightXRot = new PIDController(.0285, 0, 0.0014);
 	public Shooter shooter;
 	public Intake intake;
 
@@ -68,7 +69,7 @@ public class ActionQueueHandler {
 	 * @param param1 the first parameter, the fwd input
 	 * @param param2 the second parameter, the str input
 	 */
-	public void queuePrepare_Turn(int timeEnd, double param1, double param2) {
+	public static void queuePrepare_Turn(int timeEnd, double param1, double param2) {
 		Robot.swerve(param1, param2, 0, false);
 	}
 
@@ -79,7 +80,7 @@ public class ActionQueueHandler {
 	 * @param param2 the second parameter, STR
 	 * @param param3 the third parameter, RCW
 	 */
-	public void queueSwerve(int timeEnd, double param1, double param2, double param3) {
+	public static void queueSwerve(int timeEnd, double param1, double param2, double param3) {
 		Robot.swerve(param1, param2, param3, false);
 	}
 
@@ -88,7 +89,7 @@ public class ActionQueueHandler {
 	 * @param timeEnd the designated time for the command to end
 	 * @param param1 the first parameter, the power at which to drive
 	 */
-	public void queueDrive_Straight(int timeEnd, double param1) {
+	public static void queueDrive_Straight(int timeEnd, double param1) {
 		Robot.overrideFWD = .3;
 		// TODO finish this command
 	}
@@ -99,7 +100,7 @@ public class ActionQueueHandler {
 	 * @param timeEnd the designated time for the command to end
 	 * @param param1 the first parameter, the angle to rotate the robot to
 	 */
-	public void queueTurn_To_Angle(int timeEnd, double param1) {
+	public static void queueTurn_To_Angle(int timeEnd, double param1) {
 		double rotValue = PIDRotate.calculate(Robot.gyro.getYaw(), param1);	// calculate rotation input to a PID loop
 		rotValue = MathUtil.clamp(rotValue, -.42, .42);						// make sure robot doesn't attempt to rotate too fast
 		Robot.overrideRCW = rotValue;
@@ -109,8 +110,8 @@ public class ActionQueueHandler {
 	 * The queue action for feeding a ball into the robot's intake system.
 	 * @param timeEnd the designated time for the command to end
 	 */
-	public void queueFeed_Ball(int timeEnd) {
-		shooter.runFeeder(-.9);
+	public static void queueFeed_Ball(int timeEnd) {
+		Robot.shooter.runFeeder(-.9);
 	}
 
 	/**
@@ -118,7 +119,27 @@ public class ActionQueueHandler {
 	 * @param timeEnd the designated time for the command to end
 	 * @param param1 the first parameter, the speed in RPM to set the flywheel to
 	 */
-	public void queueRun_Flywheel(int timeEnd, double param1) {
-		shooter.setFlywheelSpeed(param1);
+	public static void queueRun_Flywheel(int timeEnd, double param1) {
+		Robot.shooter.setFlywheelSpeed(param1);
+	}
+
+	/**
+	 * The queue action for running the intake wheels on the intake.
+	 * @param timeEnd the designated timme for the command to end
+	 * @param param1 the first parameter, the percent input to feed to the wheels
+	 */
+	public static void queueRun_Intake_Wheels(int timeEnd, double param1) {
+		Robot.intake.setIntakeWheels(param1);
+	}
+
+	/**
+	 * The queue action for turning the robot until it faces the target given by Limelight.
+	 * @param timeEnd
+	 * @param param1
+	 */
+	public static void queueAngle_To_Limelight_X(int timeEnd, double param1) {
+		double rotValue = PIDLimelightXRot.calculate(Robot.limelight.getTargetX(), 0);	// calculate rotation input to a PID loop
+		rotValue = MathUtil.clamp(rotValue, -.29, .29);						// make sure robot doesn't attempt to rotate too fast
+		Robot.overrideRCW = -rotValue;
 	}
 }

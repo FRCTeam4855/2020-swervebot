@@ -60,6 +60,7 @@ public class Shooter {
      */
     public boolean setFlywheelSpeed(double setpoint) {
         velocitySetpoint = setpoint;
+        isRunning = true;
         switch (currentPhase) {
             case SPEED_UP:
                 SmartDashboard.putString("Phase", "SPEED_UP");
@@ -73,7 +74,7 @@ public class Shooter {
             default:
                 SmartDashboard.putString("Phase", "???");
                 break;
-        }
+        }//abababababab
         if (currentPhase == Phase.OFF) {
             currentPhase = Phase.SPEED_UP;
             speedUpTime = MAX_SPEEDUP_TICKS;

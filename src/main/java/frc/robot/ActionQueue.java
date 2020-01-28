@@ -11,7 +11,7 @@ package frc.robot;
 public class ActionQueue {
 
 	enum Command {
-		DEAD, PREPARE_TURN, SWERVE, DRIVE_STRAIGHT, TURN_TO_ANGLE, FEED_BALL, RUN_FLYWHEEL;
+		DEAD, PREPARE_TURN, SWERVE, DRIVE_STRAIGHT, TURN_TO_ANGLE, FEED_BALL, RUN_FLYWHEEL, RUN_INTAKE_WHEELS, ANGLE_TO_LIMELIGHT_X;
 	}
 
 	Command queueListActions [] = new Command [20];		// action ID to perform
@@ -36,9 +36,8 @@ public class ActionQueue {
 	 * @param h the reference to this ActionQueue's handler object
 	 * @param overrides whether or not the action queue should zero out any swerve overrides when it is complete
 	 */
-	public ActionQueue(ActionQueueHandler h, boolean overrides) {
+	public ActionQueue(boolean overrides) {
 		queueUsesSwerveOverrides = overrides;
-		handler = h;
 	}
 
 	/**
@@ -120,23 +119,25 @@ public class ActionQueue {
                 // Run a certain action. Parameters will be shipped to the handler class along with the command.
                 switch (queueListActions[i]) {
                     case PREPARE_TURN:
-                        handler.queuePrepare_Turn(queueListTimeEnd[i],queueListParam1[i],queueListParam2[i]);
+                        ActionQueueHandler.queuePrepare_Turn(queueListTimeEnd[i],queueListParam1[i],queueListParam2[i]);
                         break;
                     case SWERVE:
-                        handler.queueSwerve(queueListTimeEnd[i],queueListParam1[i],queueListParam2[i],queueListParam3[i]);
+                        ActionQueueHandler.queueSwerve(queueListTimeEnd[i],queueListParam1[i],queueListParam2[i],queueListParam3[i]);
 						break;
 					case DRIVE_STRAIGHT:
-						handler.queueDrive_Straight(queueListTimeEnd[i],queueListParam1[i]);
+						ActionQueueHandler.queueDrive_Straight(queueListTimeEnd[i],queueListParam1[i]);
 						break;
 					case TURN_TO_ANGLE:
-						handler.queueTurn_To_Angle(queueListTimeEnd[i], queueListParam1[i]);
+						ActionQueueHandler.queueTurn_To_Angle(queueListTimeEnd[i], queueListParam1[i]);
 						break;
 					case FEED_BALL:
-						handler.queueFeed_Ball(queueListTimeEnd[i]);
+						ActionQueueHandler.queueFeed_Ball(queueListTimeEnd[i]);
 						break;
 					case RUN_FLYWHEEL:
-						handler.queueRun_Flywheel(queueListTimeEnd[i], queueListParam1[i]);
+						ActionQueueHandler.queueRun_Flywheel(queueListTimeEnd[i], queueListParam1[i]);
 						break;
+					case ANGLE_TO_LIMELIGHT_X:
+						ActionQueueHandler.queueAngle_To_Limelight_X(queueListTimeEnd[i], queueListParam1[i]);
 					default:
                         break;
                 }
@@ -150,6 +151,8 @@ public class ActionQueue {
 					case RUN_FLYWHEEL:
 						handler.shooter.killFlywheel();
 						break;
+					case RUN_INTAKE_WHEELS:
+						handler.intake.stopIntakeWheels();
 					default:
 						break;
 				}

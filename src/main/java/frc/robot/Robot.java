@@ -97,11 +97,14 @@ public class Robot extends TimedRobot {
 	AnalogInput ultrasonic = new AnalogInput(4);
 	ArrayList<Double> usNoise = new ArrayList<Double>(10);
 
+	// Limelight Constructor
+	static Limelight limelight = new Limelight();
+
 	// Shooter Constructor
-	Shooter shooter = new Shooter(9, 0);
+	static Shooter shooter = new Shooter(9, 0);
 
 	// Intake Constructor
-	Intake intake = new Intake(2, 1);
+	static Intake intake = new Intake(2, 1);
 	//=======================================
 	
 	// COMPUTATIONAL SOFTWARE STUFF
@@ -109,15 +112,17 @@ public class Robot extends TimedRobot {
 	// Action queues
 	private ActionQueueHandler aqHandler;
 	private ActionQueue[] aqArray = new ActionQueue[] {
-		new ActionQueue(aqHandler, true),	// QUEUE_ANGLE
-		new ActionQueue(aqHandler, true),	// QUEUE_DRIVESTRAIGHT
-		new ActionQueue(aqHandler, false)	// QUEUE_SHOOTVOLLEY
+		new ActionQueue(true),	// QUEUE_ANGLE
+		new ActionQueue(true),	// QUEUE_DRIVESTRAIGHT
+		new ActionQueue(false),	// QUEUE_SHOOTVOLLEY
+		new ActionQueue(true)	// QUEUE_LIMELIGHTANGLE
 	};
 
 	// Reference IDs for action queues
 	final int QUEUE_ANGLE = 0;
 	final int QUEUE_DRIVESTRAIGHT = 1;
 	final int QUEUE_SHOOTVOLLEY = 2;
+	final int QUEUE_LIMELIGHTANGLE = 3;
 	//=======================================
 
 	// End of variable definitions
@@ -301,12 +306,14 @@ public class Robot extends TimedRobot {
 
 		aqHandler.getQueue(QUEUE_DRIVESTRAIGHT).queueFeed(ActionQueue.Command.DRIVE_STRAIGHT, 1, 120, false, 0, 0, 0);
 
-		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.RUN_FLYWHEEL, 1, 600, true, 3600, 0, 0);
-		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.FEED_BALL, 120, 170, true, 0, 0, 0);
-		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.FEED_BALL, 210, 260, true, 0, 0, 0);
-		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.FEED_BALL, 300, 350, true, 0, 0, 0);
-		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.FEED_BALL, 390, 440, true, 0, 0, 0);
-		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.FEED_BALL, 480, 530, true, 0, 0, 0);
+		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.RUN_INTAKE_WHEELS, 0, 340, true, .7, 0, 0);
+		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.FEED_BALL, 40, 90, true, 0, 0, 0);
+		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.FEED_BALL, 130, 180, true, 0, 0, 0);
+		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.FEED_BALL, 220, 270, true, 0, 0, 0);
+		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.FEED_BALL, 310, 360, true, 0, 0, 0);
+		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.FEED_BALL, 400, 450, true, 0, 0, 0);
+
+		aqHandler.getQueue(QUEUE_LIMELIGHTANGLE).queueFeed(ActionQueue.Command.ANGLE_TO_LIMELIGHT_X, 0, 100, false, 0, 0, 0);
 	}
 	
 	/**
@@ -367,24 +374,24 @@ public class Robot extends TimedRobot {
 			drive();
 			
 			// Start the Action Queue for angling the robot to an angle
-			if (controlWorking.getRawButton(Utility.BUTTON_LB)) aqHandler.getQueue(QUEUE_ANGLE).queueStart();
+			if (controlWorking.getRawButton(Utility.BUTTON_LB) && !emergencyReadjust) aqHandler.getQueue(QUEUE_LIMELIGHTANGLE).queueStart();
 
 			// Reset the gyroscope
-			if (controlWorking.getRawButton(Utility.BUTTON_Y)) gyro.reset();
+			if (controlWorking.getRawButton(Utility.BUTTON_Y) && !emergencyReadjust) gyro.reset();
 			
 			// Reset the wheels using encoders on the wheels
-			if (controlWorking.getRawButton(Utility.BUTTON_X)) {
+			if (controlWorking.getRawButton(Utility.BUTTON_X) && !emergencyReadjust) {
 				Utility.resetAllWheels(wheel);
 				Utility.setAllPIDSetpoints(0, wheel);
 			}
 			  
 			// Reset the wheels based on analog sensing. For emergency purposes only
-			if (controlWorking.getRawButton(Utility.BUTTON_B)) {
+			if (controlWorking.getRawButton(Utility.BUTTON_B) && !emergencyReadjust) {
 				Utility.zeroAllWheelsWithAnalog(wheel);
 			}
 
 			// Toggle driver-oriented control
-			if (controlWorking.getRawButtonPressed(Utility.BUTTON_A)) {
+			if (controlWorking.getRawButtonPressed(Utility.BUTTON_A) && !emergencyReadjust) {
 				if (driverOriented == true) driverOriented = false; else driverOriented = true;
 			}
 
@@ -422,9 +429,9 @@ public class Robot extends TimedRobot {
 				shooter.setFlywheelSpeed(3400);
 			}
 
-			// Run the shooter at speed 1 of 4000 RPM
+			// Run the shooter at speed 1 of 3900 RPM
 			if (controlWorking.getRawButton(Utility.BUTTON_Y)) {
-				shooter.setFlywheelSpeed(4000);
+				shooter.setFlywheelSpeed(3900);
 			}
 
 			// Fire off a volley of 5 shots
@@ -439,11 +446,11 @@ public class Robot extends TimedRobot {
 
 			// Run the shooter
 			if (shooter.isRunning()) {
-				/*if (shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint())) {
+				if (shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint())) {
 					// Run code here for shoving balls into the shooter
 				}
 				if (controlWorking.getPOV() == 0) shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint() + 3);
-				if (controlWorking.getPOV() == 180) shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint() - 3);*/
+				if (controlWorking.getPOV() == 180) shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint() - 3);
 			}
 
 			// Run the feeder
