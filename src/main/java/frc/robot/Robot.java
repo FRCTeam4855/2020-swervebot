@@ -97,6 +97,9 @@ public class Robot extends TimedRobot {
 	AnalogInput ultrasonic = new AnalogInput(4);
 	ArrayList<Double> usNoise = new ArrayList<Double>(10);
 
+	// Lidar Constructor
+	Lidar lidar = new Lidar();
+
 	// Limelight Constructor
 	static Limelight limelight = new Limelight();
 
@@ -466,9 +469,9 @@ public class Robot extends TimedRobot {
 			} else intake.stopIntakeWheels();
 
 			// Run the pivot arm
-			if (Math.abs(controlWorking.getRawAxis(Utility.AXIS_LSTICKY)) > .1) {
+			/*if (Math.abs(controlWorking.getRawAxis(Utility.AXIS_LSTICKY)) > .1) {
 				intake.setPivot(controlWorking.getRawAxis(Utility.AXIS_LSTICKY));
-			} else intake.stopPivot();
+			} else intake.stopPivot();*/
 		}
 
 		// End OPERATOR DRIVING
@@ -493,6 +496,7 @@ public class Robot extends TimedRobot {
 		SmartDashboard.putBoolean("DriverOriented", driverOriented);
 		SmartDashboard.putNumber("Flywheel Velocity", shooter.getFlywheelVelocity());
 		SmartDashboard.putNumber("Flywheel Setpoint", shooter.getFlywheelSetpoint());
+		SmartDashboard.putNumber("Lidar Dist", lidar.getDistance(Lidar.Unit.INCHES));
 
 		// End UNIVERSAL FUNCTIONS
 	}
@@ -508,5 +512,6 @@ public class Robot extends TimedRobot {
 	@Override
 	public void testPeriodic() {
 		readjust();
+		SmartDashboard.putNumber("Lidar Dist", lidar.getDistance(Lidar.Unit.INCHES));
 	}
 }
