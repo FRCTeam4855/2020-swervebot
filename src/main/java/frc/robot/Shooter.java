@@ -43,10 +43,11 @@ public class Shooter {
      * @param sparkMaxId the ID of the CAN Spark Max that the flywheel runs off of
      * @param feederId the PWM ID of the feeder motor controller
      */
-    public Shooter(int sparkMaxId, int feederId) {
+    public Shooter(int sparkMaxId, int feederId, int pivotId) {
         flywheel = new CANSparkMax(sparkMaxId, MotorType.kBrushless);
         feeder = new VictorSP(feederId);
         encoder = flywheel.getEncoder();
+        pivot = new Spark(2);
         PID = flywheel.getPIDController();
         PID.setOutputRange(-1, 1);
         PID.setP(kP);
@@ -115,7 +116,7 @@ public class Shooter {
      * @return a double of the setpoint
      */
     public double getVelocityFromDistance(double dist) {
-        
+        return 0;
     }
 
     /**

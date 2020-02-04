@@ -109,10 +109,10 @@ public class Robot extends TimedRobot {
 	static Limelight limelight = new Limelight();
 
 	// Shooter Constructor
-	static Shooter shooter = new Shooter(9, 0);
+	static Shooter shooter = new Shooter(9, 0, 2);
 
 	// Intake Constructor
-	static Intake intake = new Intake(2, 1);
+	static Intake intake = new Intake(5, 1);
 	//=======================================
 	
 	// COMPUTATIONAL SOFTWARE STUFF
@@ -516,7 +516,7 @@ public class Robot extends TimedRobot {
 
 			// Run the shooter pivot
 			if (Math.abs(controlWorking.getRawAxis(Utility.AXIS_LSTICKY)) > .1) {
-				shooter.setPivot(controlWorking.getRawAxis(Utility.AXIS_LSTICKY));
+				shooter.setPivot(controlWorking.getRawAxis(Utility.AXIS_LSTICKY) * .5);
 			} else shooter.killPivot();
 		}
 
