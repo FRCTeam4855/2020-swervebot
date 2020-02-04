@@ -16,8 +16,6 @@ public class ActionQueueHandler {
     private ActionQueue[] queues;
 	private static PIDController PIDRotate = new PIDController(.0077, 0, 0.0007);
 	private static PIDController PIDLimelightXRot = new PIDController(.0285, 0, 0.0014);
-	public Shooter shooter;
-	public Intake intake;
 
 	/**
 	 * Constructs an ActionQueueHandler. It is responsible for managing the running of every
@@ -25,13 +23,9 @@ public class ActionQueueHandler {
 	 * primary components are created
 	 * @param aq an array of ActionQueue objects. This should include every Action Queue that you want
 	 * to run on the robot.
-	 * @param s the robot's Shooter instance
-	 * @param i the robot's Intake instance
 	 */
-    public ActionQueueHandler(ActionQueue[] aq, Shooter s, Intake i) {
+    public ActionQueueHandler(ActionQueue[] aq) {
 		queues = aq;
-		shooter = s;
-		intake = i;
     }
 
     /**
@@ -89,9 +83,9 @@ public class ActionQueueHandler {
 	 * @param timeEnd the designated time for the command to end
 	 * @param param1 the first parameter, the power at which to drive
 	 */
-	public static void queueDrive_Straight(int timeEnd, double param1) {
-		Robot.overrideFWD = .3;
-		// TODO finish this command
+	public static void queueDrive_Straight(int timeEnd, double param1, double param2) {
+		Robot.overrideFWD = param1;
+		Robot.overrideSTR = param2;
 	}
 
 	/**
@@ -118,9 +112,10 @@ public class ActionQueueHandler {
 	 * The queue action for running the flywheel to a specified speed.
 	 * @param timeEnd the designated time for the command to end
 	 * @param param1 the first parameter, the speed in RPM to set the flywheel to
+	 * @param param2 the second parameter, which is either 1 or 0 for whether or not to use lidar
 	 */
-	public static void queueRun_Flywheel(int timeEnd, double param1) {
-		Robot.shooter.setFlywheelSpeed(param1);
+	public static void queueRun_Flywheel(int timeEnd, double param1, double param2) {
+		if (param2 == 0) Robot.shooter.setFlywheelSpeed(param1); else Robot.shooter.setFlywheelSpeed(Robot.shooter.getVelocityFromDistance(Robot.lidar.getDistance(Lidar.Unit.INCHES)));
 	}
 
 	/**

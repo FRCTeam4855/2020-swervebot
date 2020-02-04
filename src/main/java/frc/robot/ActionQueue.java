@@ -28,8 +28,6 @@ public class ActionQueue {
 
 	private int queueMaxTime = -1;						// largest end time in queue
 	private int queueLength = 0;						// queue length
-
-	private ActionQueueHandler handler;
 	
 	/**
 	 * Constructs an ActionQueue.
@@ -125,7 +123,7 @@ public class ActionQueue {
                         ActionQueueHandler.queueSwerve(queueListTimeEnd[i],queueListParam1[i],queueListParam2[i],queueListParam3[i]);
 						break;
 					case DRIVE_STRAIGHT:
-						ActionQueueHandler.queueDrive_Straight(queueListTimeEnd[i],queueListParam1[i]);
+						ActionQueueHandler.queueDrive_Straight(queueListTimeEnd[i],queueListParam1[i], queueListParam2[i]);
 						break;
 					case TURN_TO_ANGLE:
 						ActionQueueHandler.queueTurn_To_Angle(queueListTimeEnd[i], queueListParam1[i]);
@@ -134,10 +132,13 @@ public class ActionQueue {
 						ActionQueueHandler.queueFeed_Ball(queueListTimeEnd[i]);
 						break;
 					case RUN_FLYWHEEL:
-						ActionQueueHandler.queueRun_Flywheel(queueListTimeEnd[i], queueListParam1[i]);
+						ActionQueueHandler.queueRun_Flywheel(queueListTimeEnd[i], queueListParam1[i], queueListParam2[i]);
 						break;
 					case ANGLE_TO_LIMELIGHT_X:
 						ActionQueueHandler.queueAngle_To_Limelight_X(queueListTimeEnd[i], queueListParam1[i]);
+						break;
+					case RUN_INTAKE_WHEELS:
+						ActionQueueHandler.queueRun_Intake_Wheels(queueListTimeEnd[i], queueListParam1[i]);
 					default:
                         break;
                 }
@@ -146,13 +147,13 @@ public class ActionQueue {
 				// Kill the corresponding motor if applicable
 				switch (queueListActions[i]) {
 					case FEED_BALL:
-						handler.shooter.killFeeder();
+						Robot.shooter.killFeeder();
 						break;
 					case RUN_FLYWHEEL:
-						handler.shooter.killFlywheel();
+						Robot.shooter.killFlywheel();
 						break;
 					case RUN_INTAKE_WHEELS:
-						handler.intake.stopIntakeWheels();
+						Robot.intake.stopIntakeWheels();
 					default:
 						break;
 				}

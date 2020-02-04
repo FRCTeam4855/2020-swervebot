@@ -67,6 +67,11 @@ public class Robot extends TimedRobot {
 	// Gradual starts/stops in teleop
 	static double wheelSpeedActual1 = 0, wheelSpeedActual2 = 0, wheelSpeedActual3 = 0, wheelSpeedActual4 = 0;
 	static Timer wheelSpeedTimer = new Timer();
+
+	// AUTONOMOUS VARIABLES
+	int a_startType = 4;				// correlates to the driver station you are standing behind
+	char a_autoType = 'a';				// correlates to the routine type
+	boolean a_truncateRoutine = false;	// truncates the routine to a predefined step
   	//=======================================
   
 	// DEFINING HARDWARE
@@ -98,7 +103,7 @@ public class Robot extends TimedRobot {
 	ArrayList<Double> usNoise = new ArrayList<Double>(10);
 
 	// Lidar Constructor
-	Lidar lidar = new Lidar();
+	static Lidar lidar = new Lidar();
 
 	// Limelight Constructor
 	static Limelight limelight = new Limelight();
@@ -118,7 +123,15 @@ public class Robot extends TimedRobot {
 		new ActionQueue(true),	// QUEUE_ANGLE
 		new ActionQueue(true),	// QUEUE_DRIVESTRAIGHT
 		new ActionQueue(false),	// QUEUE_SHOOTVOLLEY
-		new ActionQueue(true)	// QUEUE_LIMELIGHTANGLE
+		new ActionQueue(true),	// QUEUE_LIMELIGHTANGLE
+
+		new ActionQueue(true),	// QUEUE_AUTONOMOUS_1A
+		new ActionQueue(true),	// QUEUE_AUTONOMOUS_1B
+		new ActionQueue(true),	// QUEUE_AUTONOMOUS_2A
+		new ActionQueue(true),	// QUEUE_AUTONOMOUS_2B
+		new ActionQueue(true),	// QUEUE_AUTONOMOUS_2C
+		new ActionQueue(true),	// QUEUE_AUTONOMOUS_3A
+		new ActionQueue(true),	// QUEUE_AUTONOMOUS_4A
 	};
 
 	// Reference IDs for action queues
@@ -126,6 +139,13 @@ public class Robot extends TimedRobot {
 	final int QUEUE_DRIVESTRAIGHT = 1;
 	final int QUEUE_SHOOTVOLLEY = 2;
 	final int QUEUE_LIMELIGHTANGLE = 3;
+	final int QUEUE_AUTONOMOUS_1A = 4;
+	final int QUEUE_AUTONOMOUS_1B = 5;
+	final int QUEUE_AUTONOMOUS_2A = 6;
+	final int QUEUE_AUTONOMOUS_2B = 7;
+	final int QUEUE_AUTONOMOUS_2C = 8;
+	final int QUEUE_AUTONOMOUS_3A = 9;
+	final int QUEUE_AUTONOMOUS_4A = 10;
 	//=======================================
 
 	// End of variable definitions
@@ -301,13 +321,13 @@ public class Robot extends TimedRobot {
 	 */
 	@Override
 	public void robotInit() {
-		aqHandler = new ActionQueueHandler(aqArray, shooter, intake);
+		aqHandler = new ActionQueueHandler(aqArray);
 
 		// Feed action queues, they hunger for your command
 
 		aqHandler.getQueue(QUEUE_ANGLE).queueFeed(ActionQueue.Command.TURN_TO_ANGLE, 1, 80, false, 0, 0, 0);
 
-		aqHandler.getQueue(QUEUE_DRIVESTRAIGHT).queueFeed(ActionQueue.Command.DRIVE_STRAIGHT, 1, 120, false, 0, 0, 0);
+		aqHandler.getQueue(QUEUE_DRIVESTRAIGHT).queueFeed(ActionQueue.Command.DRIVE_STRAIGHT, 1, 120, false, .3, 0, 0);
 
 		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.RUN_INTAKE_WHEELS, 0, 340, true, .7, 0, 0);
 		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.FEED_BALL, 40, 90, true, 0, 0, 0);
@@ -317,11 +337,29 @@ public class Robot extends TimedRobot {
 		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.FEED_BALL, 400, 450, true, 0, 0, 0);
 
 		aqHandler.getQueue(QUEUE_LIMELIGHTANGLE).queueFeed(ActionQueue.Command.ANGLE_TO_LIMELIGHT_X, 0, 100, false, 0, 0, 0);
+
+		// Autonomous Routine 1A - Start in front of station 1, shoot, pick up balls directly behind machine and shoot again
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.ANGLE_TO_LIMELIGHT_X, 0, 150, false, 0, 0, 0);	// find target from Limelight
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.RUN_FLYWHEEL, 0, 350, true, 0, 1, 0);				// run shooter based on lidar input
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.FEED_BALL, 120, 160, true, 0, 0, 0);				// feed first ball into shooter
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.FEED_BALL, 190, 230, true, 0, 0, 0);				// feed second ball into shooter
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.FEED_BALL, 260, 300, true, 0, 0, 0);				// feed third ball into shooter
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.TURN_TO_ANGLE, 340, 460, false, 180, 0, 0);		// turn the robot around
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.DRIVE_STRAIGHT, 400, 550, false, -.3, 0, 0);		// approach other balls
+
+		// Autonomous Routine 4A - Autocross from any location
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_4A).queueFeed(ActionQueue.Command.DRIVE_STRAIGHT, 90, 150, false, .3, 0, 0);
+
+		// Put default auto chooser values to the dashboard
+		SmartDashboard.putNumber("Auto: Station #", a_startType);
+		SmartDashboard.putString("Auto: Routine Type", String.valueOf(a_autoType));
+		SmartDashboard.putBoolean("Auto: Truncate", a_truncateRoutine);
 	}
 	
 	/**
 	 * This function is called immediately when the robot is disabled
 	 */
+	@Override
 	public void disabledInit() {
 		Utility.cleanSlateAllWheels(wheel);
 		Utility.powerAllWheels(false, wheel);	
@@ -330,6 +368,14 @@ public class Robot extends TimedRobot {
 		shooter.killFeeder();
 		aqHandler.killQueues();
 		intake.stop();
+	}
+
+	@Override
+	public void disabledPeriodic() {
+		// Display autonomous controls
+		a_startType = (int) SmartDashboard.getNumber("Auto: Station #", 4);
+		a_autoType = SmartDashboard.getString("Auto: Routine Type", "a").charAt(0);
+		a_truncateRoutine = SmartDashboard.getBoolean("Auto: Truncate", a_truncateRoutine);
 	}
 	
 	/**
@@ -468,10 +514,10 @@ public class Robot extends TimedRobot {
 				intake.setIntakeWheels(-.4);
 			} else intake.stopIntakeWheels();
 
-			// Run the pivot arm
-			/*if (Math.abs(controlWorking.getRawAxis(Utility.AXIS_LSTICKY)) > .1) {
-				intake.setPivot(controlWorking.getRawAxis(Utility.AXIS_LSTICKY));
-			} else intake.stopPivot();*/
+			// Run the shooter pivot
+			if (Math.abs(controlWorking.getRawAxis(Utility.AXIS_LSTICKY)) > .1) {
+				shooter.setPivot(controlWorking.getRawAxis(Utility.AXIS_LSTICKY));
+			} else shooter.killPivot();
 		}
 
 		// End OPERATOR DRIVING

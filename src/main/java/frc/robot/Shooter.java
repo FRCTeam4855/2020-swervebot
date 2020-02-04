@@ -11,6 +11,7 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.ControlType;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
+import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.VictorSP;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -32,6 +33,7 @@ public class Shooter {
 
     // Define hardware
     private VictorSP feeder;
+    private Spark pivot;
     private CANSparkMax flywheel; 
     private CANPIDController PID;
     private CANEncoder encoder;
@@ -74,7 +76,7 @@ public class Shooter {
             default:
                 SmartDashboard.putString("Phase", "???");
                 break;
-        }//abababababab
+        }
         if (currentPhase == Phase.OFF) {
             currentPhase = Phase.SPEED_UP;
             speedUpTime = MAX_SPEEDUP_TICKS;
@@ -105,6 +107,15 @@ public class Shooter {
         flywheel.set(0);
         isRunning = false;
         velocitySetpoint = 0;
+    }
+
+    /**
+     * Takes a distance from the lidar sensor and converts it to a velocity setpoint
+     * @param dist the distance in inches
+     * @return a double of the setpoint
+     */
+    public double getVelocityFromDistance(double dist) {
+        
     }
 
     /**
@@ -144,5 +155,20 @@ public class Shooter {
      */
     public void killFeeder() {
         feeder.set(0);
+    }
+
+    /**
+     * Sets the speed of the pivot arm. Will eventually work exclusively with setpoints.
+     * @param speed the percent speed to set the motor to
+     */
+    public void setPivot(double speed) {
+        pivot.set(speed);
+    }
+
+    /**
+     * Kills the pivot motor
+     */
+    public void killPivot() {
+        pivot.set(0);
     }
 }
