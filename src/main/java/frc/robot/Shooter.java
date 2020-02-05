@@ -84,7 +84,7 @@ public class Shooter {
         }
         // TODO getting consistent error messages: [CAN SPARK MAX] timed out while waiting for Periodic Status 1, Periodic Status 1
         if (speedUpTime > -1 && currentPhase == Phase.SPEED_UP) {
-            double percentOutput = -((setpoint / 5100) - .025); // formerly (setpoint / 5100) - .025
+            double percentOutput = -((setpoint / 5100) + .015); // formerly (setpoint / 5100) - .025
             flywheel.set(percentOutput);
             speedUpTime --;
             if (speedUpTime <= 0) {
@@ -133,6 +133,10 @@ public class Shooter {
      */
     public double getFlywheelSetpoint() {
         return velocitySetpoint;
+    }
+
+    public double getFlywheelCurrent() {
+        return flywheel.getBusVoltage();
     }
 
     /**

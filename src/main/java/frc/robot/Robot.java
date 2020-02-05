@@ -77,12 +77,6 @@ public class Robot extends TimedRobot {
 	// DEFINING HARDWARE
 	//=======================================
 	// Define swerve wheel classes
-	/*static Wheel wheel[] = {
-		new Wheel(new TalonSRX(1), new VictorSPX(6), new AnalogInput(1), 0),// front right
-		new Wheel(new TalonSRX(0), new VictorSPX(5), new AnalogInput(0), 1),// front left
-		new Wheel(new TalonSRX(2), new VictorSPX(7), new AnalogInput(2), 2),// back left
-		new Wheel(new TalonSRX(3), new VictorSPX(8), new AnalogInput(3), 3)// back right
-	};*/
 	static Wheel wheel[] = {
 		new Wheel(new TalonSRX(2), new VictorSPX(7), new AnalogInput(2), 2),// front right
 		new Wheel(new TalonSRX(3), new VictorSPX(8), new AnalogInput(3), 3),// front left
@@ -468,19 +462,19 @@ public class Robot extends TimedRobot {
 		if (INTERFACE_SINGLEDRIVER == false || (INTERFACE_SINGLEDRIVER == true && singleDriverController == 1)) {
 			if (INTERFACE_SINGLEDRIVER == false) controlWorking = controlOperator; else controlWorking = controlDriver;
 
-			// Run the shooter at speed 1 of 3000 RPM
+			// Run the shooter at speed 1 of 3200 RPM
 			if (controlWorking.getRawButton(Utility.BUTTON_A)) {
-				shooter.setFlywheelSpeed(3000);
+				shooter.setFlywheelSpeed(3200);
 			}
 
-			// Run the shooter at speed 1 of 3400 RPM
+			// Run the shooter at speed 1 of 3800 RPM
 			if (controlWorking.getRawButton(Utility.BUTTON_X)) {
-				shooter.setFlywheelSpeed(3400);
+				shooter.setFlywheelSpeed(3800);
 			}
 
-			// Run the shooter at speed 1 of 3900 RPM
+			// Run the shooter at speed 1 of 4600 RPM
 			if (controlWorking.getRawButton(Utility.BUTTON_Y)) {
-				shooter.setFlywheelSpeed(3900);
+				shooter.setFlywheelSpeed(4600);
 			}
 
 			// Fire off a volley of 5 shots
@@ -498,8 +492,8 @@ public class Robot extends TimedRobot {
 				if (shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint())) {
 					// Run code here for shoving balls into the shooter
 				}
-				if (controlWorking.getPOV() == 0) shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint() + 3);
-				if (controlWorking.getPOV() == 180) shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint() - 3);
+				if (controlWorking.getPOV() == 0) shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint() + 6);
+				if (controlWorking.getPOV() == 180) shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint() - 6);
 			}
 
 			// Run the feeder
@@ -543,6 +537,7 @@ public class Robot extends TimedRobot {
 		SmartDashboard.putNumber("Flywheel Velocity", shooter.getFlywheelVelocity());
 		SmartDashboard.putNumber("Flywheel Setpoint", shooter.getFlywheelSetpoint());
 		SmartDashboard.putNumber("Lidar Dist", lidar.getDistance(Lidar.Unit.INCHES));
+		SmartDashboard.putNumber("Flywheel Current", shooter.getFlywheelCurrent());
 
 		// End UNIVERSAL FUNCTIONS
 	}
