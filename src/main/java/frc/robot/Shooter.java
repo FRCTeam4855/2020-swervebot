@@ -5,13 +5,14 @@
 
 package frc.robot;
 
+import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.revrobotics.CANEncoder;
 import com.revrobotics.CANPIDController;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.ControlType;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
-import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.VictorSP;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -26,14 +27,14 @@ public class Shooter {
         OFF, SPEED_UP, LOCK_IN
     }
     private Phase currentPhase = Phase.OFF;
-    double kP = .00044;     // originally .00044
+    double kP = .00081;     // originally .00044
     double kI = 0;
     double kD = .0034;
-    double kF = .000173;    // originally .000173
+    double kF = .000202;    // originally .000173
 
     // Define hardware
     private VictorSP feeder;
-    private Spark pivot;
+    private TalonSRX pivot;         // position control is operated by a P loop of 2.2 and a clamp of 50% power, configured in Phoenix Tuner
     private CANSparkMax flywheel; 
     private CANPIDController PID;
     private CANEncoder encoder;
@@ -42,12 +43,13 @@ public class Shooter {
      * Constructs the Shooter class.
      * @param sparkMaxId the ID of the CAN Spark Max that the flywheel runs off of
      * @param feederId the PWM ID of the feeder motor controller
+     * @param pivotId the CAN ID of the Talon SRX that runs the pivot
      */
     public Shooter(int sparkMaxId, int feederId, int pivotId) {
         flywheel = new CANSparkMax(sparkMaxId, MotorType.kBrushless);
         feeder = new VictorSP(feederId);
         encoder = flywheel.getEncoder();
-        pivot = new Spark(2);
+        pivot = new TalonSRX(pivotId);
         PID = flywheel.getPIDController();
         PID.setOutputRange(-1, 1);
         PID.setP(kP);
@@ -163,17 +165,40 @@ public class Shooter {
     }
 
     /**
-     * Sets the speed of the pivot arm. Will eventually work exclusively with setpoints.
+     * Sets the speed of the pivot arm.
      * @param speed the percent speed to set the motor to
      */
     public void setPivot(double speed) {
-        pivot.set(speed);
+        pivot.set(ControlMode.PercentOutput, speed);
     }
 
     /**
-     * Kills the pivot motor
+     * Sets the position of the pivot arm.
+     * @param position the position in encoder units to set the arm to
+     */
+    public void setPivotPosition(double position) {
+        pivot.set(ControlMode.Position, position);
+    }
+
+    /**
+     * Zeros the pivot encoder.
+     */
+    public void resetPivotPosition() {
+        pivot.setSelectedSensorPosition(0);
+    }
+
+    /**
+     * Returns the encoder position of the shooter pivot.
+     * @return the position in encoder units of the shooter
+     */
+    public double getPivotPosition() {
+        return pivot.getSelectedSensorPosition();
+    }
+
+    /**
+     * Kills the pivot motor.
      */
     public void killPivot() {
-        pivot.set(0);
+        pivot.set(ControlMode.PercentOutput, 0);
     }
 }

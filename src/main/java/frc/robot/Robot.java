@@ -103,7 +103,7 @@ public class Robot extends TimedRobot {
 	static Limelight limelight = new Limelight();
 
 	// Shooter Constructor
-	static Shooter shooter = new Shooter(9, 0, 2);
+	static Shooter shooter = new Shooter(9, 0, 10);
 
 	// Intake Constructor
 	static Intake intake = new Intake(5, 1);
@@ -323,23 +323,23 @@ public class Robot extends TimedRobot {
 
 		aqHandler.getQueue(QUEUE_DRIVESTRAIGHT).queueFeed(ActionQueue.Command.DRIVE_STRAIGHT, 1, 120, false, .3, 0, 0);
 
-		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.RUN_INTAKE_WHEELS, 0, 340, true, .7, 0, 0);
-		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.FEED_BALL, 40, 90, true, 0, 0, 0);
-		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.FEED_BALL, 130, 180, true, 0, 0, 0);
-		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.FEED_BALL, 220, 270, true, 0, 0, 0);
-		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.FEED_BALL, 310, 360, true, 0, 0, 0);
-		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.FEED_BALL, 400, 450, true, 0, 0, 0);
+		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.RUN_FLYWHEEL, 1, 150, true, 3320, 0, 0);
+		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.WAIT_FOR_SENSOR, 2, 3, false, 1, 0, 0);
+		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.FEED_BALL, 5, 130, true, 0, 0, 0);
 
 		aqHandler.getQueue(QUEUE_LIMELIGHTANGLE).queueFeed(ActionQueue.Command.ANGLE_TO_LIMELIGHT_X, 0, 100, false, 0, 0, 0);
 
 		// Autonomous Routine 1A - Start in front of station 1, shoot, pick up balls directly behind machine and shoot again
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.ANGLE_TO_LIMELIGHT_X, 0, 150, false, 0, 0, 0);	// find target from Limelight
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.RUN_FLYWHEEL, 0, 350, true, 0, 1, 0);				// run shooter based on lidar input
-		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.FEED_BALL, 120, 160, true, 0, 0, 0);				// feed first ball into shooter
-		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.FEED_BALL, 190, 230, true, 0, 0, 0);				// feed second ball into shooter
-		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.FEED_BALL, 260, 300, true, 0, 0, 0);				// feed third ball into shooter
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.FEED_BALL, 120, 240, true, 0, 0, 0);				// feed balls into into shooter
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.TURN_TO_ANGLE, 340, 460, false, 180, 0, 0);		// turn the robot around
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.DRIVE_STRAIGHT, 400, 550, false, -.3, 0, 0);		// approach other balls
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.RUN_INTAKE_WHEELS, 440, 550, true, .7, 0, 0);		// suck in balls
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.TURN_TO_ANGLE, 580, 660, false, 0, 0, 0);			// turn back around to 0 degrees
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.DRIVE_STRAIGHT, 580, 690, false, .3, 0, 0);		// drive toward goal
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.RUN_FLYWHEEL, 700, 900, true, 0, 1, 0);			// run shooter based on lidar input
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.FEED_BALL, 703, 830, true, 0, 0, 0);				// feed balls into shooter
 
 		// Autonomous Routine 4A - Autocross from any location
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_4A).queueFeed(ActionQueue.Command.DRIVE_STRAIGHT, 90, 150, false, .3, 0, 0);
@@ -358,6 +358,7 @@ public class Robot extends TimedRobot {
 		Utility.cleanSlateAllWheels(wheel);
 		Utility.powerAllWheels(false, wheel);	
 		Utility.setAllPIDSetpoints(0, wheel);
+		shooter.resetPivotPosition();
 		shooter.killFlywheel();
 		shooter.killFeeder();
 		aqHandler.killQueues();
@@ -462,19 +463,19 @@ public class Robot extends TimedRobot {
 		if (INTERFACE_SINGLEDRIVER == false || (INTERFACE_SINGLEDRIVER == true && singleDriverController == 1)) {
 			if (INTERFACE_SINGLEDRIVER == false) controlWorking = controlOperator; else controlWorking = controlDriver;
 
-			// Run the shooter at speed 1 of 3200 RPM
+			// Run the shooter at speed 1 of 2700 RPM
 			if (controlWorking.getRawButton(Utility.BUTTON_A)) {
-				shooter.setFlywheelSpeed(3200);
+				shooter.setFlywheelSpeed(2700);
 			}
 
-			// Run the shooter at speed 1 of 3800 RPM
+			// Run the shooter at speed 1 of 3320 RPM
 			if (controlWorking.getRawButton(Utility.BUTTON_X)) {
-				shooter.setFlywheelSpeed(3800);
+				shooter.setFlywheelSpeed(3320);
 			}
 
-			// Run the shooter at speed 1 of 4600 RPM
+			// Run the shooter at speed 1 of 3450 RPM
 			if (controlWorking.getRawButton(Utility.BUTTON_Y)) {
-				shooter.setFlywheelSpeed(4600);
+				shooter.setFlywheelSpeed(3450);
 			}
 
 			// Fire off a volley of 5 shots
@@ -490,7 +491,9 @@ public class Robot extends TimedRobot {
 			// Run the shooter
 			if (shooter.isRunning()) {
 				if (shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint())) {
-					// Run code here for shoving balls into the shooter
+					SmartDashboard.putBoolean("Ready to fire", true);
+				} else {
+					SmartDashboard.putBoolean("Ready to fire", false);
 				}
 				if (controlWorking.getPOV() == 0) shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint() + 6);
 				if (controlWorking.getPOV() == 180) shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint() - 6);
@@ -512,6 +515,11 @@ public class Robot extends TimedRobot {
 			if (Math.abs(controlWorking.getRawAxis(Utility.AXIS_LSTICKY)) > .1) {
 				shooter.setPivot(controlWorking.getRawAxis(Utility.AXIS_LSTICKY) * .5);
 			} else shooter.killPivot();
+
+			// Set the shooter setpoint
+			if (Math.abs(controlWorking.getRawAxis(Utility.AXIS_RT)) > .3) {
+				shooter.setPivotPosition(0);
+			}
 		}
 
 		// End OPERATOR DRIVING
@@ -531,13 +539,12 @@ public class Robot extends TimedRobot {
 		// Dashboard dump
 		SmartDashboard.putNumber("ControllerID", singleDriverController);
 		SmartDashboard.putNumber("YawAxis", gyro.getYaw());
-		SmartDashboard.putNumber("PitchAxis", gyro.getPitch());
-		SmartDashboard.putNumber("RollAxis", gyro.getRoll());
 		SmartDashboard.putBoolean("DriverOriented", driverOriented);
 		SmartDashboard.putNumber("Flywheel Velocity", shooter.getFlywheelVelocity());
 		SmartDashboard.putNumber("Flywheel Setpoint", shooter.getFlywheelSetpoint());
 		SmartDashboard.putNumber("Lidar Dist", lidar.getDistance(Lidar.Unit.INCHES));
 		SmartDashboard.putNumber("Flywheel Current", shooter.getFlywheelCurrent());
+		SmartDashboard.putNumber("Shooter pivot angle", shooter.getPivotPosition());
 
 		// End UNIVERSAL FUNCTIONS
 	}

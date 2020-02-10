@@ -58,6 +58,29 @@ public class ActionQueueHandler {
 	}
 
 	/**
+	 * The queue action for stopping an ActionQueue's flow of time until a specific sensor value is reached
+	 * @param timeEnd the designated time for the stopage to start
+	 * @param param1 the first parameter, the sensor to read from
+	 * @param param2 the second parameter, the bottom value to wait for
+	 * @param param3 the third parameter, the top value to wait for
+	 * @return true if the sensor value has been reached and false if not
+	 */
+	public static boolean queueCheck_Sensor(int timeEnd, double param1, double param2, double param3) {
+		switch ((int) param1) {
+			case 0:
+				return false;
+			case 1:
+				// Wait for the flywheel to be at the correct speed before proceeding through time
+				// Only checked against bottom value
+				boolean check = Robot.shooter.setFlywheelSpeed(Robot.shooter.getFlywheelSetpoint());
+				return check;
+			default:
+				break;
+		}
+		return true;
+	}
+
+	/**
 	 * The queue action for preparing a turn. This is functionally similar to the queueSwerve command
 	 * @param timeEnd the designated time for the command to end
 	 * @param param1 the first parameter, the fwd input
@@ -105,7 +128,7 @@ public class ActionQueueHandler {
 	 * @param timeEnd the designated time for the command to end
 	 */
 	public static void queueFeed_Ball(int timeEnd) {
-		Robot.shooter.runFeeder(-.9);
+		Robot.shooter.runFeeder(.9);
 	}
 
 	/**
@@ -120,7 +143,7 @@ public class ActionQueueHandler {
 
 	/**
 	 * The queue action for running the intake wheels on the intake.
-	 * @param timeEnd the designated timme for the command to end
+	 * @param timeEnd the designated time for the command to end
 	 * @param param1 the first parameter, the percent input to feed to the wheels
 	 */
 	public static void queueRun_Intake_Wheels(int timeEnd, double param1) {
@@ -129,12 +152,20 @@ public class ActionQueueHandler {
 
 	/**
 	 * The queue action for turning the robot until it faces the target given by Limelight.
-	 * @param timeEnd
-	 * @param param1
+	 * @param timeEnd the designated time for the command to end
 	 */
-	public static void queueAngle_To_Limelight_X(int timeEnd, double param1) {
+	public static void queueAngle_To_Limelight_X(int timeEnd) {
 		double rotValue = PIDLimelightXRot.calculate(Robot.limelight.getTargetX(), 0);	// calculate rotation input to a PID loop
 		rotValue = MathUtil.clamp(rotValue, -.29, .29);						// make sure robot doesn't attempt to rotate too fast
 		Robot.overrideRCW = -rotValue;
+	}
+
+	/**
+	 * The queue action for pivoting the shooter to a certain encoder value.
+	 * @param timeEnd the designated time for the command to end
+	 * @param param1 the first parameter, the encoder value to set the shooter to
+	 */
+	public static void queueShooter_Pivot(int timeEnd, double param1) {
+		Robot.shooter.setPivotPosition(param1);
 	}
 }

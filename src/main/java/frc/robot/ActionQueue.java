@@ -11,12 +11,12 @@ package frc.robot;
 public class ActionQueue {
 
 	enum Command {
-		DEAD, PREPARE_TURN, SWERVE, DRIVE_STRAIGHT, TURN_TO_ANGLE, FEED_BALL, RUN_FLYWHEEL, RUN_INTAKE_WHEELS, ANGLE_TO_LIMELIGHT_X;
+		DEAD, WAIT_FOR_SENSOR, PREPARE_TURN, SWERVE, DRIVE_STRAIGHT, TURN_TO_ANGLE, FEED_BALL, SHOOTER_PIVOT, RUN_FLYWHEEL, RUN_INTAKE_WHEELS, ANGLE_TO_LIMELIGHT_X;
 	}
 
 	Command queueListActions [] = new Command [20];		// action ID to perform
 	int queueListTimeStart [] = new int [20];			// elapsed begin time to run a command
-	int queueListTimeEnd [] = new int [20];				// elapsed begin time to end a command, a value of -2 means a desired sensor output must be present to stop
+	int queueListTimeEnd [] = new int [20];				// elapsed begin time to end a command
 	boolean queueListKillMotor[] = new boolean [20];	// whether to kill designated motors after the command is stopped or not
 	double queueListParam1 [] = new double [20];		// parameter 1 for queue item
 	double queueListParam2 [] = new double [20];		// parameter 2 for queue item
@@ -78,11 +78,13 @@ public class ActionQueue {
 	}
 	
 	/**
-	 * Starts the queue. If this command is run and the queue is already running, the queue will start over.
+	 * Starts the queue. If this command is run and the queue is already running, the queue will instead stop.
 	 */
 	public void queueStart() {
-		queueIsRunning = true;
-		queueElapsedTime = 0;
+		if (!queueIsRunning) {
+			queueIsRunning = true;
+			queueElapsedTime = 0;
+		} else queueStop();
 	}
 	
 	/**
@@ -116,6 +118,13 @@ public class ActionQueue {
             if (queueListTimeStart[i] <= queueElapsedTime && queueElapsedTime <= queueListTimeEnd[i]) {
                 // Run a certain action. Parameters will be shipped to the handler class along with the command.
                 switch (queueListActions[i]) {
+					case WAIT_FOR_SENSOR:
+						if (ActionQueueHandler.queueCheck_Sensor(queueListTimeEnd[i], queueListParam1[i], queueListParam2[i], queueListParam3[i])) {
+							queueElapsedTime = queueListTimeEnd[i] + 1;
+						} else {
+							queueElapsedTime = queueListTimeStart[i];
+						}
+						break;
                     case PREPARE_TURN:
                         ActionQueueHandler.queuePrepare_Turn(queueListTimeEnd[i],queueListParam1[i],queueListParam2[i]);
                         break;
@@ -135,10 +144,13 @@ public class ActionQueue {
 						ActionQueueHandler.queueRun_Flywheel(queueListTimeEnd[i], queueListParam1[i], queueListParam2[i]);
 						break;
 					case ANGLE_TO_LIMELIGHT_X:
-						ActionQueueHandler.queueAngle_To_Limelight_X(queueListTimeEnd[i], queueListParam1[i]);
+						ActionQueueHandler.queueAngle_To_Limelight_X(queueListTimeEnd[i]);
 						break;
 					case RUN_INTAKE_WHEELS:
 						ActionQueueHandler.queueRun_Intake_Wheels(queueListTimeEnd[i], queueListParam1[i]);
+						break;
+					case SHOOTER_PIVOT:
+						ActionQueueHandler.queueShooter_Pivot(queueListTimeEnd[i], queueListParam1[i]);
 					default:
                         break;
                 }
