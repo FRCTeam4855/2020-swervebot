@@ -5,6 +5,8 @@
 
 package frc.robot;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * A single list of commands that are executed by the robot whenever necessary.
  */
@@ -22,7 +24,9 @@ public class ActionQueue {
 	double queueListParam2 [] = new double [20];		// parameter 2 for queue item
 	double queueListParam3 [] = new double [20];		// parameter 3 for queue item
 	
-	private int queueElapsedTime = 0;					// current elapsed time for this command in code steps (50 steps in 1 second)
+	private double queueElapsedTime = 0;				// current elapsed time for this command in seconds
+	private double queueStartTime = 0;					// the system time during which this command started in nanoseconds
+	private double queueTotalHangTime = 0;				// when checking for sensors, the queue pauses, and this command holds how much time the queue has been paused for
 	private boolean queueIsRunning = false;				// if queue is enabled or not
 	private boolean queueUsesSwerveOverrides = false;	// whether or not the action queue makes use of the swerve() overrides
 
@@ -31,7 +35,6 @@ public class ActionQueue {
 	
 	/**
 	 * Constructs an ActionQueue.
-	 * @param h the reference to this ActionQueue's handler object
 	 * @param overrides whether or not the action queue should zero out any swerve overrides when it is complete
 	 */
 	public ActionQueue(boolean overrides) {
@@ -71,7 +74,6 @@ public class ActionQueue {
 				queueListActions[i] = Command.DEAD;
 				queueListTimeStart[i] = -1;
 				queueListTimeEnd[i] = -1;
-				queueLength --;
 				break;
 			}
 		}
@@ -83,7 +85,9 @@ public class ActionQueue {
 	public void queueStart() {
 		if (!queueIsRunning) {
 			queueIsRunning = true;
+			queueStartTime = System.nanoTime();
 			queueElapsedTime = 0;
+			queueTotalHangTime = 0;
 		} else queueStop();
 	}
 	
@@ -112,18 +116,18 @@ public class ActionQueue {
 	 * This function runs through the fed commands, increases elapsed time, and runs robot commands.
 	 */
 	public void queueRun() {
-		queueElapsedTime ++;
+		boolean allowTimePassage = true;	// whether or not to allow the passage of time to proceed
 		for (int i = 0; i < queueLength; i ++) {
 			if (queueListTimeEnd[i] > queueMaxTime) queueMaxTime = queueListTimeEnd[i];
             if (queueListTimeStart[i] <= queueElapsedTime && queueElapsedTime <= queueListTimeEnd[i]) {
                 // Run a certain action. Parameters will be shipped to the handler class along with the command.
                 switch (queueListActions[i]) {
 					case WAIT_FOR_SENSOR:
-						if (ActionQueueHandler.queueCheck_Sensor(queueListTimeEnd[i], queueListParam1[i], queueListParam2[i], queueListParam3[i])) {
-							queueElapsedTime = queueListTimeEnd[i] + 1;
-						} else {
-							queueElapsedTime = queueListTimeStart[i];
-						}
+						if (!ActionQueueHandler.queueCheck_Sensor(queueListTimeEnd[i], queueListParam1[i], queueListParam2[i], queueListParam3[i])) {
+							// Sensors are not ready, hang the queue
+							queueTotalHangTime += TimeUnit.SECONDS.convert(System.nanoTime(), TimeUnit.NANOSECONDS) - queueListTimeStart[i];
+							allowTimePassage = false;
+						} else allowTimePassage = true;
 						break;
                     case PREPARE_TURN:
                         ActionQueueHandler.queuePrepare_Turn(queueListTimeEnd[i],queueListParam1[i],queueListParam2[i]);
@@ -171,6 +175,8 @@ public class ActionQueue {
 				}
 			}
 		}
+		// Pass time
+		if (allowTimePassage) queueElapsedTime = TimeUnit.SECONDS.convert((long) (System.nanoTime() - queueStartTime - queueTotalHangTime), TimeUnit.NANOSECONDS);	// convert system time to seconds
 		if (queueMaxTime < queueElapsedTime) queueStop();	// if the last command has finished, the queue can stop
 	}
 }
