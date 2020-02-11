@@ -323,9 +323,9 @@ public class Robot extends TimedRobot {
 
 		aqHandler.getQueue(QUEUE_DRIVESTRAIGHT).queueFeed(ActionQueue.Command.DRIVE_STRAIGHT, 1, 120, false, .3, 0, 0);
 
-		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.RUN_FLYWHEEL, 1, 150, true, 3320, 0, 0);
-		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.WAIT_FOR_SENSOR, 2, 3, false, 1, 0, 0);
-		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.FEED_BALL, 5, 130, true, 0, 0, 0);
+		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.RUN_FLYWHEEL, 0, 2.7, true, 3320, 0, 0);
+		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.WAIT_FOR_SENSOR, 0, 0.1, false, 1, 0, 0);
+		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.FEED_BALL, 0.1, 2.4, true, 0, 0, 0);
 
 		aqHandler.getQueue(QUEUE_LIMELIGHTANGLE).queueFeed(ActionQueue.Command.ANGLE_TO_LIMELIGHT_X, 0, 100, false, 0, 0, 0);
 

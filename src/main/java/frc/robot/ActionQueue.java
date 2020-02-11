@@ -17,8 +17,8 @@ public class ActionQueue {
 	}
 
 	Command queueListActions [] = new Command [20];		// action ID to perform
-	int queueListTimeStart [] = new int [20];			// elapsed begin time to run a command
-	int queueListTimeEnd [] = new int [20];				// elapsed begin time to end a command
+	double queueListTimeStart [] = new double [20];		// elapsed begin time to run a command
+	double queueListTimeEnd [] = new double [20];		// elapsed begin time to end a command
 	boolean queueListKillMotor[] = new boolean [20];	// whether to kill designated motors after the command is stopped or not
 	double queueListParam1 [] = new double [20];		// parameter 1 for queue item
 	double queueListParam2 [] = new double [20];		// parameter 2 for queue item
@@ -30,7 +30,7 @@ public class ActionQueue {
 	private boolean queueIsRunning = false;				// if queue is enabled or not
 	private boolean queueUsesSwerveOverrides = false;	// whether or not the action queue makes use of the swerve() overrides
 
-	private int queueMaxTime = -1;						// largest end time in queue
+	private double queueMaxTime = -1;					// largest end time in queue
 	private int queueLength = 0;						// queue length
 	
 	/**
@@ -51,7 +51,7 @@ public class ActionQueue {
 	 * @param param2 the 2nd parameter
 	 * @param param3 the 3rd parameter
 	 */
-	public void queueFeed(Command action, int timeStart, int timeEnd, boolean killMotor, double param1, double param2, double param3) {
+	public void queueFeed(Command action, double timeStart, double timeEnd, boolean killMotor, double param1, double param2, double param3) {
 		queueListActions[queueLength] = action;
 		queueListTimeStart[queueLength] = timeStart;
 		queueListTimeEnd[queueLength] = timeEnd;
