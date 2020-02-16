@@ -9,6 +9,7 @@ import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.SensorCollection;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.VictorSPX;
+import com.revrobotics.CANSparkMax;
 
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.controller.PIDController;
@@ -20,7 +21,7 @@ import edu.wpi.first.wpiutil.math.MathUtil;
  */
 public class Wheel {
 	public TalonSRX motorAngle;														// the motor controller that drives the angular motor of the wheel
-	public VictorSPX motorDrive;														// the motor controller that drives the rotational motor of the wheel
+	public CANSparkMax motorDrive;														// the motor controller that drives the rotational motor of the wheel
 	public AnalogInput zeroSensor;													// the magnetic sensor mounted at the wheel's 0 degree mark
 	public PIDController PID;														// the specific PID controller for this wheel's angular motion
 
@@ -45,9 +46,11 @@ public class Wheel {
 	/**
 	 * Creates a new wheel instance. There should only be four of these
 	 * @param a the motor controller that controls the angle of the wheel
-	 * @param d the motor control that controls the direction of the wheel
+	 * @param d the motor controller that controls the direction of the wheel
+	 * @param i the analog input for each wheel's magnetic sensor
+	 * @param id the internal ID to assign the wheel
 	 */
-	public Wheel(TalonSRX a, VictorSPX d, AnalogInput i, int id) {
+	public Wheel(TalonSRX a, CANSparkMax d, AnalogInput i, int id) {
 		motorAngle = a;
 		motorDrive = d;
 		zeroSensor = i;
@@ -242,7 +245,7 @@ public class Wheel {
 		endSetToZero();
 		reset();
 		clearFault();
-		motorDrive.set(ControlMode.PercentOutput, 0);
+		motorDrive.set(0);
 		motorAngle.set(ControlMode.PercentOutput, 0);
 		turnOn();
 	}
@@ -316,7 +319,7 @@ public class Wheel {
 			calc = MathUtil.clamp(calc, -1, 1);
 			motorAngle.set(ControlMode.PercentOutput, calc);
 		} else if (!settingToZero) {
-			motorDrive.set(ControlMode.PercentOutput, 0);
+			motorDrive.set(0);
 			motorAngle.set(ControlMode.PercentOutput, 0);
 		}
 

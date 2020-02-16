@@ -19,6 +19,8 @@ import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 import com.kauailabs.navx.frc.AHRS;
+import com.revrobotics.CANSparkMax;
+import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -78,10 +80,10 @@ public class Robot extends TimedRobot {
 	//=======================================
 	// Define swerve wheel classes
 	static Wheel wheel[] = {
-		new Wheel(new TalonSRX(2), new VictorSPX(7), new AnalogInput(2), 2),// front right
-		new Wheel(new TalonSRX(3), new VictorSPX(8), new AnalogInput(3), 3),// front left
-		new Wheel(new TalonSRX(1), new VictorSPX(6), new AnalogInput(1), 0),// back right
-		new Wheel(new TalonSRX(0), new VictorSPX(5), new AnalogInput(0), 1)// back left	
+		new Wheel(new TalonSRX(2), new CANSparkMax(7, MotorType.kBrushless), new AnalogInput(2), 2),// front right
+		new Wheel(new TalonSRX(3), new CANSparkMax(8, MotorType.kBrushless), new AnalogInput(3), 3),// front left
+		new Wheel(new TalonSRX(1), new CANSparkMax(6, MotorType.kBrushless), new AnalogInput(1), 0),// back right
+		new Wheel(new TalonSRX(0), new CANSparkMax(5, MotorType.kBrushless), new AnalogInput(0), 1)// back left	
 	};
 	
 	// Xbox controllers
@@ -187,10 +189,10 @@ public class Robot extends TimedRobot {
 			// Emergency tank drive
 			Utility.setAllPIDSetpoints(0, wheel);
 			Utility.resetAllWheels(wheel);
-			wheel[0].motorDrive.set(ControlMode.PercentOutput, controlWorking.getRawAxis(5));
-			wheel[3].motorDrive.set(ControlMode.PercentOutput, controlWorking.getRawAxis(5));
-			wheel[2].motorDrive.set(ControlMode.PercentOutput, controlWorking.getRawAxis(1));
-			wheel[1].motorDrive.set(ControlMode.PercentOutput, controlWorking.getRawAxis(1));
+			wheel[0].motorDrive.set(controlWorking.getRawAxis(5));
+			wheel[3].motorDrive.set(controlWorking.getRawAxis(5));
+			wheel[2].motorDrive.set(controlWorking.getRawAxis(1));
+			wheel[1].motorDrive.set(controlWorking.getRawAxis(1));
 		}
 
 		for (Wheel w : wheel) {
@@ -255,10 +257,10 @@ public class Robot extends TimedRobot {
 			wheelSpeedTimer.reset();
 		}
 		
-		wheel[0].motorDrive.set(ControlMode.PercentOutput, wheelSpeedActual1);
-		wheel[1].motorDrive.set(ControlMode.PercentOutput, wheelSpeedActual2);
-		wheel[2].motorDrive.set(ControlMode.PercentOutput, wheelSpeedActual3);
-		wheel[3].motorDrive.set(ControlMode.PercentOutput, wheelSpeedActual4);
+		wheel[0].motorDrive.set(wheelSpeedActual1);
+		wheel[1].motorDrive.set(wheelSpeedActual2);
+		wheel[2].motorDrive.set(wheelSpeedActual3);
+		wheel[3].motorDrive.set(wheelSpeedActual4);
 	}
 
 	/**
@@ -275,9 +277,9 @@ public class Robot extends TimedRobot {
 		else if (controlDriver.getRawButton(6)) wheel[wheelTune].motorAngle.set(ControlMode.PercentOutput, -0.3); else wheel[wheelTune].motorAngle.set(ControlMode.PercentOutput, 0);
 		
 		// Spin wheels
-		if (controlDriver.getRawAxis(2) > .09) wheel[wheelTune].motorDrive.set(ControlMode.PercentOutput, controlDriver.getRawAxis(2) / 2);
-		else if (controlDriver.getRawAxis(3) > .09) wheel[wheelTune].motorDrive.set(ControlMode.PercentOutput, -controlDriver.getRawAxis(3) / 2);
-		else wheel[wheelTune].motorDrive.set(ControlMode.PercentOutput, 0);
+		if (controlDriver.getRawAxis(2) > .09) wheel[wheelTune].motorDrive.set(controlDriver.getRawAxis(2) / 2);
+		else if (controlDriver.getRawAxis(3) > .09) wheel[wheelTune].motorDrive.set(-controlDriver.getRawAxis(3) / 2);
+		else wheel[wheelTune].motorDrive.set(0);
 	}
 
 	/**
@@ -463,24 +465,22 @@ public class Robot extends TimedRobot {
 		if (INTERFACE_SINGLEDRIVER == false || (INTERFACE_SINGLEDRIVER == true && singleDriverController == 1)) {
 			if (INTERFACE_SINGLEDRIVER == false) controlWorking = controlOperator; else controlWorking = controlDriver;
 
-			// Run the shooter at speed 1 of 2700 RPM
-			if (controlWorking.getRawButton(Utility.BUTTON_A)) {
+			// Run the flyheel at the necessary speed to shoot while against the tower and aim the shooter
+			if (controlWorking.getRawButton(Utility.BUTTON_Y)) {
 				shooter.setFlywheelSpeed(2700);
+				// TODO auto aim pivot
 			}
 
-			// Run the shooter at speed 1 of 3320 RPM
+			// Run the flywheel at the necessary speed to shoot from anywhere else and aim the shooter accordingly
 			if (controlWorking.getRawButton(Utility.BUTTON_X)) {
 				shooter.setFlywheelSpeed(3320);
+				// TODO auto aim pivot based on lidar input
+				// TODO auto set velocity according to lidar input
 			}
 
-			// Run the shooter at speed 1 of 3450 RPM
-			if (controlWorking.getRawButton(Utility.BUTTON_Y)) {
-				shooter.setFlywheelSpeed(3450);
-			}
-
-			// Fire off a volley of 5 shots
-			if (controlWorking.getRawButtonPressed(Utility.BUTTON_LB)) {
-				aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueStart();
+			// Simply turn on the flywheel to prepare to shoot
+			if (controlWorking.getRawButton(Utility.BUTTON_A)) {
+				shooter.setFlywheelSpeed(3200);
 			}
 
 			// Kill the shooter
@@ -495,8 +495,7 @@ public class Robot extends TimedRobot {
 				} else {
 					SmartDashboard.putBoolean("Ready to fire", false);
 				}
-				if (controlWorking.getPOV() == 0) shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint() + 6);
-				if (controlWorking.getPOV() == 180) shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint() - 6);
+				if (Math.abs(controlWorking.getRawAxis(Utility.AXIS_RSTICKX)) > .3) shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint() + (int) (controlWorking.getRawAxis(Utility.AXIS_RSTICKX) * 6));
 			}
 
 			// Run the feeder
