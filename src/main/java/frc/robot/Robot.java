@@ -94,10 +94,6 @@ public class Robot extends TimedRobot {
 	// NavX Constructor
 	public static AHRS gyro = new AHRS(SPI.Port.kMXP);
 
-	// Ultrasonic Sensor Constructor
-	AnalogInput ultrasonic = new AnalogInput(4);
-	ArrayList<Double> usNoise = new ArrayList<Double>(10);
-
 	// Lidar Constructor
 	static Lidar lidar = new Lidar();
 
@@ -109,6 +105,9 @@ public class Robot extends TimedRobot {
 
 	// Intake Constructor
 	static Intake intake = new Intake(5, 1);
+
+	// Climber Constructor
+	TalonSRX climber = new TalonSRX(16);
 	//=======================================
 	
 	// COMPUTATIONAL SOFTWARE STUFF
@@ -282,34 +281,6 @@ public class Robot extends TimedRobot {
 		else wheel[wheelTune].motorDrive.set(0);
 	}
 
-	/**
-	 * Get the value of the ultrasonic sensor, using basic noise reduction techniques to make values more accurate
-	 */
-	public double getUltrasonicSensor() {
-		/*SensorCollection sensor = wheel[1].motorAngle.getSensorCollection();
-		return sensor.getAnalogInRaw();*/
-		usNoise.add(ultrasonic.getVoltage());
-		if (usNoise.size() > 10) usNoise.remove(0);
-		double runningAverage = 0;
-		double prevNum = 0;
-		boolean[] markForRemoval = new boolean[usNoise.size()];
-
-		// Mark values for removal
-		for (int i = 0; i < usNoise.size(); i ++) {
-			double num = usNoise.get(i);
-			if (num >= 1.96 || num - prevNum > 1) {
-				markForRemoval[i] = true;
-			} else markForRemoval[i] = false;
-		}
-
-		// Take average after removing numbers
-		for (int i = markForRemoval.length - 1; i < markForRemoval.length; i ++) {
-			//if (markForRemoval[i])
-		}
-
-		return runningAverage / usNoise.size();
-	}
-
 	// <--- ROBOT INITIALIZATION --->
 	
 	/**
@@ -420,7 +391,7 @@ public class Robot extends TimedRobot {
 			drive();
 			
 			// Start the Action Queue for angling the robot to an angle
-			if (controlWorking.getRawButton(Utility.BUTTON_LB) && !emergencyReadjust) aqHandler.getQueue(QUEUE_LIMELIGHTANGLE).queueStart();
+			if (controlWorking.getRawButton(Utility.BUTTON_LB)) limelight.toggleLamp();
 
 			// Reset the gyroscope
 			if (controlWorking.getRawButton(Utility.BUTTON_Y) && !emergencyReadjust) gyro.reset();
@@ -488,36 +459,50 @@ public class Robot extends TimedRobot {
 				shooter.killFlywheel();
 			}
 
-			// Run the shooter
+			// Execute the logic to continue running the flywheel
 			if (shooter.isRunning()) {
 				if (shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint())) {
 					SmartDashboard.putBoolean("Ready to fire", true);
 				} else {
 					SmartDashboard.putBoolean("Ready to fire", false);
 				}
-				if (Math.abs(controlWorking.getRawAxis(Utility.AXIS_RSTICKX)) > .3) shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint() + (int) (controlWorking.getRawAxis(Utility.AXIS_RSTICKX) * 6));
+				// Fine-tune speed
+				if (Math.abs(controlWorking.getRawAxis(Utility.AXIS_RSTICKX)) > .25) shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint() + (int) (controlWorking.getRawAxis(Utility.AXIS_RSTICKX) * 6));
+			} else {
+				// Manually set power to forward or backward of flywheel while it isn't in setpoint mode
+				if (controlWorking.getPOV() == 90) shooter.setFlywheelPercentSpeed(.3);
+				if (controlWorking.getPOV() == 270) shooter.setFlywheelPercentSpeed(-.3);
 			}
 
 			// Run the feeder
-			if (Math.abs(controlWorking.getRawAxis(Utility.AXIS_RSTICKY)) > .1) {
-				shooter.runFeeder(-controlWorking.getRawAxis(Utility.AXIS_RSTICKY));
+			if (controlWorking.getRawAxis(Utility.AXIS_RT) > .1) {
+				shooter.runFeeder(-controlWorking.getRawAxis(Utility.AXIS_RT));
+			} else if (controlWorking.getRawButton(Utility.BUTTON_RSTICK)) {
+				shooter.runFeeder(.75);
 			} else shooter.killFeeder();
 
 			// Run the intake wheels
 			if (controlWorking.getRawAxis(Utility.AXIS_LT) > .1) {
 				intake.setIntakeWheels(controlWorking.getRawAxis(Utility.AXIS_LT));
 			} else if (controlWorking.getRawButton(Utility.BUTTON_LSTICK)) {
-				intake.setIntakeWheels(-.4);
+				intake.setIntakeWheels(-.5);
 			} else intake.stopIntakeWheels();
 
 			// Run the shooter pivot
-			if (Math.abs(controlWorking.getRawAxis(Utility.AXIS_LSTICKY)) > .1) {
-				shooter.setPivot(controlWorking.getRawAxis(Utility.AXIS_LSTICKY) * .5);
+			if (Math.abs(controlWorking.getRawAxis(Utility.AXIS_RSTICKY)) > .1) {
+				shooter.setPivot(controlWorking.getRawAxis(Utility.AXIS_RSTICKY) * .5);
 			} else shooter.killPivot();
 
-			// Set the shooter setpoint
-			if (Math.abs(controlWorking.getRawAxis(Utility.AXIS_RT)) > .3) {
-				shooter.setPivotPosition(0);
+			// Zero out the shooter pivot encoder
+			if (controlWorking.getRawButtonPressed(Utility.BUTTON_RB)) {
+				shooter.resetPivotPosition();
+			}
+
+			// Run climber motor
+			if (controlWorking.getPOV() == 0) {
+				climber.set(ControlMode.PercentOutput, .5);
+			} else if (controlWorking.getPOV() == 180) {
+				climber.set(ControlMode.PercentOutput, -.5);
 			}
 		}
 

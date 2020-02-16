@@ -113,6 +113,14 @@ public class Shooter {
     }
 
     /**
+     * Sets the percentage output of the flywheel. Should be used conservatively.
+     * @param speed the percent output of the speed
+     */
+    public void setFlywheelPercentSpeed(double speed) {
+        if (isRunning) flywheel.set(speed);
+    }
+
+    /**
      * Takes a distance from the lidar sensor and converts it to a velocity setpoint
      * @param dist the distance in inches
      * @return a double of the setpoint
@@ -137,6 +145,10 @@ public class Shooter {
         return velocitySetpoint;
     }
 
+    /**
+     * Gets the voltage draw of the flywheel.
+     * @return the voltage of the flywheel motor controller
+     */
     public double getFlywheelCurrent() {
         return flywheel.getBusVoltage();
     }
