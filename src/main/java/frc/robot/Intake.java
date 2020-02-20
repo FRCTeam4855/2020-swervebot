@@ -1,20 +1,24 @@
+// FRC TEAM 4855 ROBOT CODE
+// 2020 GAME INFINITE RECHARGE
+
+// Swerve-bot code: Intake class
+
 package frc.robot;
 
 import edu.wpi.first.wpilibj.Spark;
-import edu.wpi.first.wpilibj.VictorSP;
 
-public class Intake {
+public class Intake {// TODO pivot encoder code
     private Spark pivot;
-    private VictorSP wheels;
+    private Spark wheels;
     
     /**
-     * Constructs an instance of Intake. The intake wheels are driven by a VictorSP and the pivot motors are driven by 2 Sparks joined by a PWM.
+     * Constructs an instance of Intake. It consists of a pivot arm and intake wheels, both driven by Spark motor controllers.
      * @param pivotPort the PWM port for the pivot arm
      * @param wheelsPort the PWM port for the intake wheels
      */
     public Intake(int pivotPort, int wheelsPort) {
         pivot = new Spark(pivotPort);
-        wheels = new VictorSP(wheelsPort);
+        wheels = new Spark(wheelsPort);
     }
 
     /**

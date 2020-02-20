@@ -26,6 +26,7 @@ import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.SPI;
+import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -94,6 +95,9 @@ public class Robot extends TimedRobot {
 	// NavX Constructor
 	public static AHRS gyro = new AHRS(SPI.Port.kMXP);
 
+	// Blinkin Constructor
+	Blinkin leds = new Blinkin(5);
+
 	// Lidar Constructor
 	static Lidar lidar = new Lidar();
 
@@ -107,7 +111,7 @@ public class Robot extends TimedRobot {
 	static Intake intake = new Intake(5, 1);
 
 	// Climber Constructor
-	TalonSRX climber = new TalonSRX(16);
+	VictorSPX climber = new VictorSPX(16);
 	//=======================================
 	
 	// COMPUTATIONAL SOFTWARE STUFF

@@ -13,7 +13,7 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.ControlType;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
-import edu.wpi.first.wpilibj.VictorSP;
+import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class Shooter {
@@ -33,7 +33,7 @@ public class Shooter {
     double kF = .000202;    // originally .000173
 
     // Define hardware
-    private VictorSP feeder;
+    private Spark feeder;
     private TalonSRX pivot;         // position control is operated by a P loop of 2.2 and a clamp of 50% power, configured in Phoenix Tuner
     private CANSparkMax flywheel; 
     private CANPIDController PID;
@@ -47,7 +47,7 @@ public class Shooter {
      */
     public Shooter(int sparkMaxId, int feederId, int pivotId) {
         flywheel = new CANSparkMax(sparkMaxId, MotorType.kBrushless);
-        feeder = new VictorSP(feederId);
+        feeder = new Spark(feederId);
         encoder = flywheel.getEncoder();
         pivot = new TalonSRX(pivotId);
         PID = flywheel.getPIDController();
