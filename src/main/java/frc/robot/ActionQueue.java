@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 public class ActionQueue {
 
 	enum Command {
-		DEAD, WAIT_FOR_SENSOR, PREPARE_TURN, SWERVE, DRIVE_STRAIGHT, TURN_TO_ANGLE, FEED_BALL, SHOOTER_PIVOT, RUN_FLYWHEEL, RUN_INTAKE_WHEELS, ANGLE_TO_LIMELIGHT_X;
+		DEAD, WAIT_FOR_SENSOR, PREPARE_TURN, SWERVE, DRIVE_STRAIGHT, TURN_TO_ANGLE, FEED_BALL, SHOOTER_PIVOT, INTAKE_PIVOT, RUN_FLYWHEEL, RUN_INTAKE_WHEELS, ANGLE_TO_LIMELIGHT_X;
 	}
 
 	Command queueListActions [] = new Command [20];		// action ID to perform
@@ -35,7 +35,8 @@ public class ActionQueue {
 	
 	/**
 	 * Constructs an ActionQueue.
-	 * @param overrides whether or not the action queue should zero out any swerve overrides when it is complete
+	 * @param overrides whether or not the action queue should zero out any swerve overrides when it is complete, it's a
+	 * good idea to set this to true if you are using the swerves during your action queue
 	 */
 	public ActionQueue(boolean overrides) {
 		queueUsesSwerveOverrides = overrides;
@@ -155,6 +156,9 @@ public class ActionQueue {
 						break;
 					case SHOOTER_PIVOT:
 						ActionQueueHandler.queueShooter_Pivot(queueListTimeEnd[i], queueListParam1[i]);
+						break;
+					case INTAKE_PIVOT:
+						ActionQueueHandler.queueIntake_Pivot(queueListTimeEnd[i], queueListParam1[i]);
 					default:
                         break;
                 }
@@ -170,13 +174,20 @@ public class ActionQueue {
 						break;
 					case RUN_INTAKE_WHEELS:
 						Robot.intake.stopIntakeWheels();
+						break;
+					case INTAKE_PIVOT:
+						Robot.intake.stopPivot();
+						break;
+					case DRIVE_STRAIGHT:
+						ActionQueueHandler.resetNeos = false;
+						break;
 					default:
 						break;
 				}
 			}
 		}
 		// Pass time
-		if (allowTimePassage) queueElapsedTime = TimeUnit.SECONDS.convert((long) (System.nanoTime() - queueStartTime - queueTotalHangTime), TimeUnit.NANOSECONDS);	// convert system time to seconds
+		if (allowTimePassage) queueElapsedTime = TimeUnit.SECONDS.convert((long) (System.nanoTime() - queueStartTime), TimeUnit.NANOSECONDS) - queueTotalHangTime;	// convert system time to seconds
 		if (queueMaxTime < queueElapsedTime) queueStop();	// if the last command has finished, the queue can stop
 	}
 }

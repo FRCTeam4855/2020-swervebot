@@ -29,22 +29,27 @@ public class Limelight {
 	NetworkTableEntry ledMode = limelightTable.getEntry("ledMode");													// 0 for on, 1 for off
 	NetworkTableEntry camMode = limelightTable.getEntry("camMode");
     
-    public Limelight() {
-	
-	}
-
+	/**
+	 * Turns on the Limelight lamps.
+	 */
 	public void turnOnLamp() {
 		ledMode.setNumber(0);
 		camMode.setNumber(0);
 		lampOn = true;
 	}
 
+	/**
+	 * Turns off the Limelight lamps.
+	 */
 	public void turnOffLamp() {
 		ledMode.setNumber(1);
 		camMode.setNumber(1);
 		lampOn = false;
 	}
 
+	/**
+	 * Toggles on or off the Limelight lamps.
+	 */
 	public void toggleLamp() {
 		if (lampOn) {
 			turnOffLamp();

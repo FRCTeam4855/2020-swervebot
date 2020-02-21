@@ -8,7 +8,6 @@ package frc.robot;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.SensorCollection;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
-import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 import com.revrobotics.CANSparkMax;
 
 import edu.wpi.first.wpilibj.AnalogInput;
@@ -349,7 +348,7 @@ public class Wheel {
 	}
 
 	/**
-	 * Turns the wheel to the setpoint. Should be running constantly.
+	 * Turns the wheel to the setpoint. I wrote that this should be running constantly a long time ago, but in all honesty I'm not sure what this actually does anymore.
 	 */
 	public void setTurn() {
 		if (on) motorAngle.set(ControlMode.PercentOutput, MathUtil.clamp(PID.calculate(getEncoderPosition(), getSetpoint()), -1, 1));

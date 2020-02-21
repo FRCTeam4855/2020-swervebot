@@ -5,6 +5,8 @@
 
 package frc.robot;
 
+import java.util.concurrent.TimeUnit;
+
 import edu.wpi.first.wpilibj.controller.PIDController;
 import edu.wpi.first.wpiutil.math.MathUtil;
 
@@ -13,9 +15,13 @@ import edu.wpi.first.wpiutil.math.MathUtil;
  * run the robot and holding onto all ActionQueue objects.
  */
 public class ActionQueueHandler {
-    private ActionQueue[] queues;
-	private static PIDController PIDRotate = new PIDController(.0077, 0, 0.0007);
-	private static PIDController PIDLimelightXRot = new PIDController(.0285, 0, 0.0014);
+	private ActionQueue[] queues;															// array to hold all the action queues in Robot
+	private static double elapsedTime = -1;													// for use with the WAIT_FOR_SENSOR timer command
+	private static double startingTime = -1;												// for use with the WAIT_FOR_SENSOR timer command
+	public static boolean resetNeos = false;												// for use with the DRIVE_STRAIGHT action command
+	private static PIDController PIDWheelSpeed = new PIDController(.4, 0, 0);				// for use with the DRIVE_STRAIGHT action command
+	private static PIDController PIDRotate = new PIDController(.0077, 0, 0.0007);			// for use with the ROTATE_TO_ANGLE action command
+	private static PIDController PIDLimelightXRot = new PIDController(.0285, 0, 0.0014);	// for use with the ANGLE_TO_LIMELIGHT_X action command
 
 	/**
 	 * Constructs an ActionQueueHandler. It is responsible for managing the running of every
@@ -61,19 +67,35 @@ public class ActionQueueHandler {
 	 * The queue action for stopping an ActionQueue's flow of time until a specific sensor value is reached
 	 * @param timeEnd the designated time for the stopage to start
 	 * @param param1 the first parameter, the sensor to read from
-	 * @param param2 the second parameter, the bottom value to wait for
-	 * @param param3 the third parameter, the top value to wait for
+	 * @param param2 the second parameter, the value from either direction to wait for
+	 * @param param3 the third parameter, the allowable tolerance
 	 * @return true if the sensor value has been reached and false if not
 	 */
 	public static boolean queueCheck_Sensor(double timeEnd, double param1, double param2, double param3) {
 		switch ((int) param1) {
 			case 0:
-				return false;
+				// Empty wait command. Once certain time has passed, queue will continue
+				// TWO OF THESE COMMANDS CANNOT BE RUNNING AT THE SAME TIME
+				if (startingTime == -1) {
+					startingTime = System.nanoTime();
+					elapsedTime = 0;
+					return false;
+				} else {
+					elapsedTime = TimeUnit.SECONDS.convert((long)(System.nanoTime() - startingTime), TimeUnit.NANOSECONDS);
+					if (elapsedTime >= param1) {
+						startingTime = -1;
+						elapsedTime = -1;
+						return true;
+					} else {
+						return false;
+					}
+				}
 			case 1:
 				// Wait for the flywheel to be at the correct speed before proceeding through time
-				// Only checked against bottom value
-				boolean check = Robot.shooter.setFlywheelSpeed(Robot.shooter.getFlywheelSetpoint());
-				return check;
+				return Robot.shooter.setFlywheelSpeed(Robot.shooter.getFlywheelSetpoint());
+			case 2:
+				// Wait for the robot to be turned to an absolute angle (doesn't work when angling with Limelight)
+				return Robot.gyro.getYaw() - param2 < param3;
 			default:
 				break;
 		}
@@ -102,13 +124,33 @@ public class ActionQueueHandler {
 	}
 
 	/**
-	 * The queue action for driving in a straight line alongside a wall.
+	 * The queue action for driving in a straight line relative to the robot using the NEO encoders on the drive wheels.
 	 * @param timeEnd the designated time for the command to end
 	 * @param param1 the first parameter, the power at which to drive
+	 * @param param2 the second parameter, the angle at which to drive the robot to
 	 */
 	public static void queueDrive_Straight(double timeEnd, double param1, double param2) {
+		// Angle the wheels during motion and run a velocity PID calculation on each drive wheel to ensure they are all going the same speed
+		for (Wheel w : Robot.wheel) {
+			w.setSetpoint((int) param2);
+			w.motorDrive.set(PIDWheelSpeed.calculate(w.motorDrive.getEncoder().getVelocity(), param1));
+		}
+		
+		/*	PLAN B CODE
+		// Clean slate the encoders to begin the command to make certain we're using standardized values
+		if (!resetNeos) {
+			resetNeos = true;
+			for (Wheel w : Robot.wheel) {
+				w.motorDrive.getEncoder().setPosition(0);
+			}
+		}
+		
+		// Angle the wheels during motion, put wheel positions against each other and manually tune each wheel
+		*/
+
+		/* PLAN C CODE lol please don't make it come to this
 		Robot.overrideFWD = param1;
-		Robot.overrideSTR = param2;
+		Robot.overrideSTR = param2;*/
 	}
 
 	/**
@@ -167,5 +209,14 @@ public class ActionQueueHandler {
 	 */
 	public static void queueShooter_Pivot(double timeEnd, double param1) {
 		Robot.shooter.setPivotPosition(param1);
+	}
+
+	/**
+	 * The queue action to run the pivot with percentage control.
+	 * @param timeEnd the designated time for the command to end
+	 * @param param1 the first parameter, the percent speed to set the motor to
+	 */
+	public static void queueIntake_Pivot(double timeEnd, double param1) {
+		Robot.intake.setPivot(param1);
 	}
 }

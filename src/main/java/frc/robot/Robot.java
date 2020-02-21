@@ -13,8 +13,6 @@
 package frc.robot;
 // package edu.christmas.2012;
 
-import java.util.ArrayList;
-
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.VictorSPX;
@@ -26,7 +24,6 @@ import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.SPI;
-import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -90,7 +87,7 @@ public class Robot extends TimedRobot {
 	// Xbox controllers
 	Joystick controlDriver = new Joystick(0);			// the joystick responsible for driving
 	Joystick controlOperator = new Joystick(1);			// the joystick responsible for operator controls
-	Joystick controlWorking;  							// the controller currently being read from, usually used just for one-driver control
+	static Joystick controlWorking;  							// the controller currently being read from, usually used just for one-driver control
 
 	// NavX Constructor
 	public static AHRS gyro = new AHRS(SPI.Port.kMXP);
@@ -131,6 +128,7 @@ public class Robot extends TimedRobot {
 		new ActionQueue(true),	// QUEUE_AUTONOMOUS_2C
 		new ActionQueue(true),	// QUEUE_AUTONOMOUS_3A
 		new ActionQueue(true),	// QUEUE_AUTONOMOUS_4A
+		new ActionQueue(true),	// MADDEN_SPINMOVE
 	};
 
 	// Reference IDs for action queues
@@ -145,6 +143,7 @@ public class Robot extends TimedRobot {
 	final int QUEUE_AUTONOMOUS_2C = 8;
 	final int QUEUE_AUTONOMOUS_3A = 9;
 	final int QUEUE_AUTONOMOUS_4A = 10;
+	final int MADDEN_SPINMOVE = 21;
 	//=======================================
 
 	// End of variable definitions
@@ -311,7 +310,7 @@ public class Robot extends TimedRobot {
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.RUN_FLYWHEEL, 0, 350, true, 0, 1, 0);				// run shooter based on lidar input
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.FEED_BALL, 120, 240, true, 0, 0, 0);				// feed balls into into shooter
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.TURN_TO_ANGLE, 340, 460, false, 180, 0, 0);		// turn the robot around
-		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.DRIVE_STRAIGHT, 400, 550, false, -.3, 0, 0);		// approach other balls
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.DRIVE_STRAIGHT, 400, 550, true, -.3, 0, 0);		// approach other balls
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.RUN_INTAKE_WHEELS, 440, 550, true, .7, 0, 0);		// suck in balls
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.TURN_TO_ANGLE, 580, 660, false, 0, 0, 0);			// turn back around to 0 degrees
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.DRIVE_STRAIGHT, 580, 690, false, .3, 0, 0);		// drive toward goal
@@ -345,6 +344,10 @@ public class Robot extends TimedRobot {
 	@Override
 	public void disabledPeriodic() {
 		// Display autonomous controls
+		SmartDashboard.putNumber("Auto: Station #", a_startType);
+		SmartDashboard.putString("Auto: Routine Type", String.valueOf(a_autoType));
+		SmartDashboard.putBoolean("Auto: Truncate", a_truncateRoutine);
+
 		a_startType = (int) SmartDashboard.getNumber("Auto: Station #", 4);
 		a_autoType = SmartDashboard.getString("Auto: Routine Type", "a").charAt(0);
 		a_truncateRoutine = SmartDashboard.getBoolean("Auto: Truncate", a_truncateRoutine);
