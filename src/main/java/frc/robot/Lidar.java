@@ -14,8 +14,8 @@ public class Lidar {
         INCHES, CENTIMETERS
     }
 
-    public Lidar() {
-        device = new Counter(0);
+    public Lidar(int port) {
+        device = new Counter(port);
         device.setMaxPeriod(1.00);
         device.setSemiPeriodMode(true);
         device.reset();

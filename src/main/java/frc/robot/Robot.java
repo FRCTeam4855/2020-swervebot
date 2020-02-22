@@ -23,6 +23,7 @@ import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.PWMVictorSPX;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
@@ -78,10 +79,10 @@ public class Robot extends TimedRobot {
 	//=======================================
 	// Define swerve wheel classes
 	static Wheel wheel[] = {
-		new Wheel(new TalonSRX(2), new CANSparkMax(7, MotorType.kBrushless), new AnalogInput(2), 2),// front right
-		new Wheel(new TalonSRX(3), new CANSparkMax(8, MotorType.kBrushless), new AnalogInput(3), 3),// front left
-		new Wheel(new TalonSRX(1), new CANSparkMax(6, MotorType.kBrushless), new AnalogInput(1), 0),// back right
-		new Wheel(new TalonSRX(0), new CANSparkMax(5, MotorType.kBrushless), new AnalogInput(0), 1)// back left	
+		new Wheel(new TalonSRX(1), new CANSparkMax(6, MotorType.kBrushless), new AnalogInput(2), 2),// front right
+		new Wheel(new TalonSRX(2), new CANSparkMax(7, MotorType.kBrushless), new AnalogInput(3), 3),// front left
+		new Wheel(new TalonSRX(3), new CANSparkMax(8, MotorType.kBrushless), new AnalogInput(1), 0),// back left
+		new Wheel(new TalonSRX(4), new CANSparkMax(9, MotorType.kBrushless), new AnalogInput(0), 1)// back right	
 	};
 	
 	// Xbox controllers
@@ -93,22 +94,22 @@ public class Robot extends TimedRobot {
 	public static AHRS gyro = new AHRS(SPI.Port.kMXP);
 
 	// Blinkin Constructor
-	Blinkin leds = new Blinkin(5);
+	Blinkin leds = new Blinkin(10);
 
 	// Lidar Constructor
-	static Lidar lidar = new Lidar();
+	static Lidar lidar = new Lidar(3);
 
 	// Limelight Constructor
 	static Limelight limelight = new Limelight();
 
 	// Shooter Constructor
-	static Shooter shooter = new Shooter(9, 0, 10);
+	static Shooter shooter = new Shooter(10, 0, 5);
 
 	// Intake Constructor
-	static Intake intake = new Intake(5, 1);
+	static Intake intake = new Intake(2, 1, 0, 1, 2);
 
 	// Climber Constructor
-	VictorSPX climber = new VictorSPX(16);
+	PWMVictorSPX climber = new PWMVictorSPX(3);
 	//=======================================
 	
 	// COMPUTATIONAL SOFTWARE STUFF
@@ -495,6 +496,11 @@ public class Robot extends TimedRobot {
 				intake.setIntakeWheels(-.5);
 			} else intake.stopIntakeWheels();
 
+			// Run the intake pivot
+			if (Math.abs(controlWorking.getRawAxis(Utility.AXIS_LSTICKY)) > .1) {
+				intake.setPivot(controlWorking.getRawAxis(Utility.AXIS_LSTICKY) * .8);
+			} else intake.setPivot(0);
+
 			// Run the shooter pivot
 			if (Math.abs(controlWorking.getRawAxis(Utility.AXIS_RSTICKY)) > .1) {
 				shooter.setPivot(controlWorking.getRawAxis(Utility.AXIS_RSTICKY) * .5);
@@ -507,10 +513,10 @@ public class Robot extends TimedRobot {
 
 			// Run climber motor
 			if (controlWorking.getPOV() == 0) {
-				climber.set(ControlMode.PercentOutput, .5);
+				climber.set(.5);
 			} else if (controlWorking.getPOV() == 180) {
-				climber.set(ControlMode.PercentOutput, -.5);
-			}
+				climber.set(-.5);
+			} else climber.set(0);
 		}
 
 		// End OPERATOR DRIVING
@@ -523,6 +529,9 @@ public class Robot extends TimedRobot {
 		
 		// Record match time
 		matchTime = DriverStation.getInstance().getMatchTime();
+
+		// Change LEDs
+		if (driverOriented) leds.setLEDs(Blinkin.C1_HEARTBEAT_MEDIUM); else leds.setLEDs(Blinkin.C2_HEARTBEAT_MEDIUM);
 
 		// Run action queues
 		aqHandler.runQueues();
