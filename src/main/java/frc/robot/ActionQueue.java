@@ -114,7 +114,7 @@ public class ActionQueue {
 	}
 
 	/**
-	 * This function runs through the fed commands, increases elapsed time, and runs robot commands.
+	 * This function runs through the fed commands, increases elapsed time, and runs robot commands. DO NOT RUN FROM ROBOT.JAVA
 	 */
 	public void queueRun() {
 		boolean allowTimePassage = true;	// whether or not to allow the passage of time to proceed

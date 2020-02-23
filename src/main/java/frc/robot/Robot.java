@@ -15,11 +15,12 @@ package frc.robot;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
-import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 import com.kauailabs.navx.frc.AHRS;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
+import edu.wpi.cscore.UsbCamera;
+import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Joystick;
@@ -88,7 +89,7 @@ public class Robot extends TimedRobot {
 	// Xbox controllers
 	Joystick controlDriver = new Joystick(0);			// the joystick responsible for driving
 	Joystick controlOperator = new Joystick(1);			// the joystick responsible for operator controls
-	static Joystick controlWorking;  							// the controller currently being read from, usually used just for one-driver control
+	static Joystick controlWorking;  					// the controller currently being read from, usually used just for one-driver control
 
 	// NavX Constructor
 	public static AHRS gyro = new AHRS(SPI.Port.kMXP);
@@ -110,6 +111,9 @@ public class Robot extends TimedRobot {
 
 	// Climber Constructor
 	PWMVictorSPX climber = new PWMVictorSPX(3);
+
+	// USB Camera Constructor
+	UsbCamera camera;
 	//=======================================
 	
 	// COMPUTATIONAL SOFTWARE STUFF
@@ -292,6 +296,14 @@ public class Robot extends TimedRobot {
 	 */
 	@Override
 	public void robotInit() {
+
+		// Configure USB camera
+		camera = CameraServer.getInstance().startAutomaticCapture(0);
+		camera.setBrightness(20);
+		camera.setExposureManual(50);
+		camera.setResolution(160, 120);
+		camera.setFPS(17);
+		
 		aqHandler = new ActionQueueHandler(aqArray);
 
 		// Feed action queues, they hunger for your command
@@ -398,8 +410,12 @@ public class Robot extends TimedRobot {
 			// Control the robot's drivetrain
 			drive();
 			
-			// Start the Action Queue for angling the robot to an angle
-			if (controlWorking.getRawButton(Utility.BUTTON_LB)) limelight.toggleLamp();
+			// Aim down the goal with Limelight
+			// TODO only toggles lamp right now. Should aim down target
+			if (controlWorking.getRawButtonPressed(Utility.BUTTON_LB)) limelight.toggleLamp();
+
+			// Run the autovolley routine
+			if (controlWorking.getRawAxis(Utility.AXIS_RT) > .8) aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueStart();
 
 			// Reset the gyroscope
 			if (controlWorking.getRawButton(Utility.BUTTON_Y) && !emergencyReadjust) gyro.reset();
@@ -447,12 +463,13 @@ public class Robot extends TimedRobot {
 			// Run the flyheel at the necessary speed to shoot while against the tower and aim the shooter
 			if (controlWorking.getRawButton(Utility.BUTTON_Y)) {
 				shooter.setFlywheelSpeed(2700);
-				// TODO auto aim pivot
+				shooter.setPivotPosition(0);
 			}
 
 			// Run the flywheel at the necessary speed to shoot from anywhere else and aim the shooter accordingly
 			if (controlWorking.getRawButton(Utility.BUTTON_X)) {
 				shooter.setFlywheelSpeed(3320);
+				shooter.setPivotPosition(145);
 				// TODO auto aim pivot based on lidar input
 				// TODO auto set velocity according to lidar input
 			}
@@ -493,7 +510,7 @@ public class Robot extends TimedRobot {
 			if (controlWorking.getRawAxis(Utility.AXIS_LT) > .1) {
 				intake.setIntakeWheels(controlWorking.getRawAxis(Utility.AXIS_LT));
 			} else if (controlWorking.getRawButton(Utility.BUTTON_LSTICK)) {
-				intake.setIntakeWheels(-.5);
+				intake.setIntakeWheels(-1);
 			} else intake.stopIntakeWheels();
 
 			// Run the intake pivot
@@ -503,7 +520,7 @@ public class Robot extends TimedRobot {
 
 			// Run the shooter pivot
 			if (Math.abs(controlWorking.getRawAxis(Utility.AXIS_RSTICKY)) > .1) {
-				shooter.setPivot(controlWorking.getRawAxis(Utility.AXIS_RSTICKY) * .5);
+				shooter.setPivot(controlWorking.getRawAxis(Utility.AXIS_RSTICKY) * .25);
 			} else shooter.killPivot();
 
 			// Zero out the shooter pivot encoder

@@ -7,6 +7,7 @@ package frc.robot;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
+import com.ctre.phoenix.motorcontrol.can.TalonSRXPIDSetConfiguration;
 import com.revrobotics.CANEncoder;
 import com.revrobotics.CANPIDController;
 import com.revrobotics.CANSparkMax;
@@ -56,6 +57,9 @@ public class Shooter {
         PID.setI(kI);
         PID.setD(kD);
         PID.setFF(kF);
+        pivot.configPeakOutputForward(.25);
+        pivot.configPeakOutputReverse(-.25);
+        pivot.config_kP(0, .6);
     }
 
     /**

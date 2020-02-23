@@ -33,7 +33,7 @@ public class Limelight {
 	 * Turns on the Limelight lamps.
 	 */
 	public void turnOnLamp() {
-		ledMode.setNumber(0);
+		ledMode.setNumber(3);
 		camMode.setNumber(0);
 		lampOn = true;
 	}
