@@ -7,7 +7,6 @@ package frc.robot;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
-import com.ctre.phoenix.motorcontrol.can.TalonSRXPIDSetConfiguration;
 import com.revrobotics.CANEncoder;
 import com.revrobotics.CANPIDController;
 import com.revrobotics.CANSparkMax;
@@ -15,7 +14,9 @@ import com.revrobotics.ControlType;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
 import edu.wpi.first.wpilibj.Spark;
+import edu.wpi.first.wpilibj.controller.PIDController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpiutil.math.MathUtil;
 
 public class Shooter {
     // Define instance variables
@@ -38,6 +39,7 @@ public class Shooter {
     private TalonSRX pivot;         // position control is operated by a P loop of 2.2 and a clamp of 50% power, configured in Phoenix Tuner
     private CANSparkMax flywheel; 
     private CANPIDController PID;
+    private PIDController pivotPID;
     private CANEncoder encoder;
 
     /**
@@ -57,9 +59,9 @@ public class Shooter {
         PID.setI(kI);
         PID.setD(kD);
         PID.setFF(kF);
-        pivot.configPeakOutputForward(.25);
-        pivot.configPeakOutputReverse(-.25);
-        pivot.config_kP(0, .6);
+        pivot.configPeakOutputForward(.3);
+        pivot.configPeakOutputReverse(-.3);
+        pivotPID = new PIDController(.01, 0, 0);
     }
 
     /**
@@ -68,6 +70,7 @@ public class Shooter {
      * @return true or false depending on the speed has been locked in
      */
     public boolean setFlywheelSpeed(double setpoint) {
+        setpoint = MathUtil.clamp(setpoint, 0, 4500);
         velocitySetpoint = setpoint;
         isRunning = true;
         switch (currentPhase) {
@@ -193,7 +196,7 @@ public class Shooter {
      * @param position the position in encoder units to set the arm to
      */
     public void setPivotPosition(double position) {
-        pivot.set(ControlMode.Position, position);
+        pivot.set(ControlMode.PercentOutput, -pivotPID.calculate(getPivotPosition(), position));
     }
 
     /**

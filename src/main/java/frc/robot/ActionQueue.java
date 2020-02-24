@@ -5,8 +5,6 @@
 
 package frc.robot;
 
-import java.util.concurrent.TimeUnit;
-
 /**
  * A single list of commands that are executed by the robot whenever necessary.
  */
@@ -126,7 +124,7 @@ public class ActionQueue {
 					case WAIT_FOR_SENSOR:
 						if (!ActionQueueHandler.queueCheck_Sensor(queueListTimeEnd[i], queueListParam1[i], queueListParam2[i], queueListParam3[i])) {
 							// Sensors are not ready, hang the queue
-							queueTotalHangTime += TimeUnit.SECONDS.convert(System.nanoTime(), TimeUnit.NANOSECONDS) - queueListTimeStart[i];
+							queueTotalHangTime = toSeconds(System.nanoTime() - queueStartTime) - queueListTimeStart[i];
 							allowTimePassage = false;
 						} else allowTimePassage = true;
 						break;
@@ -163,7 +161,7 @@ public class ActionQueue {
                         break;
                 }
 			}
-			if (queueElapsedTime == queueListTimeEnd[i] + 1 && queueListKillMotor[i]) {
+			if (queueElapsedTime == queueListTimeEnd[i] && queueListKillMotor[i]) {
 				// Kill the corresponding motor if applicable
 				switch (queueListActions[i]) {
 					case FEED_BALL:
@@ -187,7 +185,18 @@ public class ActionQueue {
 			}
 		}
 		// Pass time
-		if (allowTimePassage) queueElapsedTime = TimeUnit.SECONDS.convert((long) (System.nanoTime() - queueStartTime), TimeUnit.NANOSECONDS) - queueTotalHangTime;	// convert system time to seconds
+		//if (allowTimePassage) queueElapsedTime = TimeUnit.SECONDS.convert((System.nanoTime() - (long) queueStartTime), TimeUnit.NANOSECONDS) /*- queueTotalHangTime*/;	// convert system time to seconds
+		if (allowTimePassage) queueElapsedTime = toSeconds(System.nanoTime() - (long) queueStartTime) - queueTotalHangTime;	// convert system time to seconds
 		if (queueMaxTime < queueElapsedTime) queueStop();	// if the last command has finished, the queue can stop
+		//System.out.println(queueElapsedTime);
+	}
+
+	/**
+	 * Converts a value from nanoseconds to seconds.
+	 * @param nanoseconds nanosecond value
+	 * @return a double of seconds
+	 */
+	private double toSeconds(double nanoseconds) {
+		return nanoseconds / 1000000000.0;
 	}
 }

@@ -69,6 +69,9 @@ public class Robot extends TimedRobot {
 	// Gradual starts/stops in teleop
 	static double wheelSpeedActual1 = 0, wheelSpeedActual2 = 0, wheelSpeedActual3 = 0, wheelSpeedActual4 = 0;
 	static Timer wheelSpeedTimer = new Timer();
+	// Shooter aiming variables
+	boolean aimMode = false;					// whether or not robot is moving shooter pivot
+	double aimModePosition = 0;					// the position the robot is attemping to aim the shooter pivot to
 
 	// AUTONOMOUS VARIABLES
 	int a_startType = 4;				// correlates to the driver station you are standing behind
@@ -316,6 +319,9 @@ public class Robot extends TimedRobot {
 		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.WAIT_FOR_SENSOR, 0, 0.1, false, 1, 0, 0);
 		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.FEED_BALL, 0.1, 2.4, true, 0, 0, 0);
 
+		/*aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.FEED_BALL, 0, 2, true, 0, 0, 0);
+		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.RUN_INTAKE_WHEELS, 3, 5, true, 0.5, 0, 0);*/
+
 		aqHandler.getQueue(QUEUE_LIMELIGHTANGLE).queueFeed(ActionQueue.Command.ANGLE_TO_LIMELIGHT_X, 0, 100, false, 0, 0, 0);
 
 		// Autonomous Routine 1A - Start in front of station 1, shoot, pick up balls directly behind machine and shoot again
@@ -409,6 +415,9 @@ public class Robot extends TimedRobot {
 			
 			// Control the robot's drivetrain
 			drive();
+
+			// Change LEDs
+			if (driverOriented) leds.setLEDs(Blinkin.C1_HEARTBEAT_MEDIUM); else leds.setLEDs(Blinkin.C2_HEARTBEAT_MEDIUM);
 			
 			// Aim down the goal with Limelight
 			// TODO only toggles lamp right now. Should aim down target
@@ -464,12 +473,16 @@ public class Robot extends TimedRobot {
 			if (controlWorking.getRawButton(Utility.BUTTON_Y)) {
 				shooter.setFlywheelSpeed(2700);
 				shooter.setPivotPosition(0);
+				aimMode = true;
+				aimModePosition = 0;
 			}
 
 			// Run the flywheel at the necessary speed to shoot from anywhere else and aim the shooter accordingly
 			if (controlWorking.getRawButton(Utility.BUTTON_X)) {
 				shooter.setFlywheelSpeed(3320);
-				shooter.setPivotPosition(145);
+				shooter.setPivotPosition(500);
+				aimMode = true;
+				aimModePosition = 500;
 				// TODO auto aim pivot based on lidar input
 				// TODO auto set velocity according to lidar input
 			}
@@ -482,19 +495,25 @@ public class Robot extends TimedRobot {
 			// Kill the shooter
 			if (controlWorking.getRawButtonPressed(Utility.BUTTON_B)) {
 				shooter.killFlywheel();
+				aimMode = false;
 			}
 
 			// Execute the logic to continue running the flywheel
 			if (shooter.isRunning()) {
 				if (shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint())) {
 					SmartDashboard.putBoolean("Ready to fire", true);
+					leds.setLEDs(Blinkin.SHOT_BLUE);
 				} else {
 					SmartDashboard.putBoolean("Ready to fire", false);
 				}
 				// Fine-tune speed
-				if (Math.abs(controlWorking.getRawAxis(Utility.AXIS_RSTICKX)) > .25) shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint() + (int) (controlWorking.getRawAxis(Utility.AXIS_RSTICKX) * 6));
+				if (Math.abs(controlWorking.getRawAxis(Utility.AXIS_RSTICKX)) > .25) {
+					aimMode = false;	// something was manually changed so stay put
+					shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint() + (int) (controlWorking.getRawAxis(Utility.AXIS_RSTICKX) * 6));
+				}
 			} else {
 				// Manually set power to forward or backward of flywheel while it isn't in setpoint mode
+				SmartDashboard.putBoolean("Ready to fire", false);
 				if (controlWorking.getPOV() == 90) shooter.setFlywheelPercentSpeed(.3);
 				if (controlWorking.getPOV() == 270) shooter.setFlywheelPercentSpeed(-.3);
 			}
@@ -516,11 +535,12 @@ public class Robot extends TimedRobot {
 			// Run the intake pivot
 			if (Math.abs(controlWorking.getRawAxis(Utility.AXIS_LSTICKY)) > .1) {
 				intake.setPivot(controlWorking.getRawAxis(Utility.AXIS_LSTICKY) * .8);
-			} else intake.setPivot(0);
+			} else if (!aimMode) intake.setPivot(0);
 
 			// Run the shooter pivot
 			if (Math.abs(controlWorking.getRawAxis(Utility.AXIS_RSTICKY)) > .1) {
 				shooter.setPivot(controlWorking.getRawAxis(Utility.AXIS_RSTICKY) * .25);
+				aimMode = false;
 			} else shooter.killPivot();
 
 			// Zero out the shooter pivot encoder
@@ -534,6 +554,11 @@ public class Robot extends TimedRobot {
 			} else if (controlWorking.getPOV() == 180) {
 				climber.set(-.5);
 			} else climber.set(0);
+
+			// Aim down pivot if aimMode is active
+			if (aimMode) {
+				shooter.setPivotPosition(aimModePosition);
+			}
 		}
 
 		// End OPERATOR DRIVING
@@ -546,9 +571,6 @@ public class Robot extends TimedRobot {
 		
 		// Record match time
 		matchTime = DriverStation.getInstance().getMatchTime();
-
-		// Change LEDs
-		if (driverOriented) leds.setLEDs(Blinkin.C1_HEARTBEAT_MEDIUM); else leds.setLEDs(Blinkin.C2_HEARTBEAT_MEDIUM);
 
 		// Run action queues
 		aqHandler.runQueues();
