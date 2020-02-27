@@ -48,4 +48,8 @@ public class Intake {
         wheels.set(0);
         pivot.set(0);
     }
+
+    public double getPivotPosition() {
+        return encoder.get();
+    }
 }

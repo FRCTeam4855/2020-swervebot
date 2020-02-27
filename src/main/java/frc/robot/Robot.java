@@ -36,8 +36,8 @@ public class Robot extends TimedRobot {
 			
 	// CONTROL CONSTANTS
 	//=======================================
-	final double CONTROL_SPEEDREDUCTION = .6; 	  			  	// teleop drivetrain inputs are multiplied by this number when turbo is NOT engaged
-	final double CONTROL_SPEEDREDUCTION_PRECISION = 3.2;		// teleop drivetrain inputs are divided by this number when precision trigger is engaged
+	final double CONTROL_SPEEDREDUCTION = .5; 	  			  	// teleop drivetrain inputs are multiplied by this number when turbo is NOT engaged
+	final double CONTROL_SPEEDREDUCTION_PRECISION = 3.6;		// teleop drivetrain inputs are divided by this number when precision trigger is engaged
 	final double CONTROL_DEADZONE = 0.23;       			    // minimum value before joystick inputs will be considered on the swerves
 	final boolean CONTROL_AUTOFAULT_HANDLE = false;				// whether or not the robot will automatically react to a faulty wheel and flip to tank drive
 	boolean INTERFACE_SINGLEDRIVER = false;  		  			// whether or not to enable or disable single driver input (press START to switch between controllers)
@@ -69,9 +69,11 @@ public class Robot extends TimedRobot {
 	// Gradual starts/stops in teleop
 	static double wheelSpeedActual1 = 0, wheelSpeedActual2 = 0, wheelSpeedActual3 = 0, wheelSpeedActual4 = 0;
 	static Timer wheelSpeedTimer = new Timer();
-	// Shooter aiming variables
+	// Various variables
 	boolean aimMode = false;					// whether or not robot is moving shooter pivot
 	double aimModePosition = 0;					// the position the robot is attemping to aim the shooter pivot to
+	boolean climberDriverOverride = false;		// driver can hit up control to take control of climber
+	static boolean showDiagnostics = false;		// show more variables to diagnose issues
 
 	// AUTONOMOUS VARIABLES
 	int a_startType = 4;				// correlates to the driver station you are standing behind
@@ -311,9 +313,9 @@ public class Robot extends TimedRobot {
 
 		// Feed action queues, they hunger for your command
 
-		aqHandler.getQueue(QUEUE_ANGLE).queueFeed(ActionQueue.Command.TURN_TO_ANGLE, 1, 80, false, 0, 0, 0);
+		aqHandler.getQueue(QUEUE_ANGLE).queueFeed(ActionQueue.Command.TURN_TO_ANGLE, 0, 2, false, 0, 0, 0);
 
-		aqHandler.getQueue(QUEUE_DRIVESTRAIGHT).queueFeed(ActionQueue.Command.DRIVE_STRAIGHT, 1, 120, false, .3, 0, 0);
+		aqHandler.getQueue(QUEUE_DRIVESTRAIGHT).queueFeed(ActionQueue.Command.DRIVE_STRAIGHT, 0, 3, false, 200, 0, 0);
 
 		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.RUN_FLYWHEEL, 0, 2.7, true, 3320, 0, 0);
 		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.WAIT_FOR_SENSOR, 0, 0.1, false, 1, 0, 0);
@@ -322,7 +324,7 @@ public class Robot extends TimedRobot {
 		/*aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.FEED_BALL, 0, 2, true, 0, 0, 0);
 		aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueFeed(ActionQueue.Command.RUN_INTAKE_WHEELS, 3, 5, true, 0.5, 0, 0);*/
 
-		aqHandler.getQueue(QUEUE_LIMELIGHTANGLE).queueFeed(ActionQueue.Command.ANGLE_TO_LIMELIGHT_X, 0, 100, false, 0, 0, 0);
+		aqHandler.getQueue(QUEUE_LIMELIGHTANGLE).queueFeed(ActionQueue.Command.ANGLE_TO_LIMELIGHT_X, 0, 1, false, 0, 0, 0);
 
 		// Autonomous Routine 1A - Start in front of station 1, shoot, pick up balls directly behind machine and shoot again
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.ANGLE_TO_LIMELIGHT_X, 0, 150, false, 0, 0, 0);	// find target from Limelight
@@ -337,7 +339,7 @@ public class Robot extends TimedRobot {
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.FEED_BALL, 703, 830, true, 0, 0, 0);				// feed balls into shooter
 
 		// Autonomous Routine 4A - Autocross from any location
-		aqHandler.getQueue(QUEUE_AUTONOMOUS_4A).queueFeed(ActionQueue.Command.DRIVE_STRAIGHT, 90, 150, false, .3, 0, 0);
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_4A).queueFeed(ActionQueue.Command.DRIVE_STRAIGHT, 1, 3, false, 2000, 0, 0);
 
 		// Put default auto chooser values to the dashboard
 		SmartDashboard.putNumber("Auto: Station #", a_startType);
@@ -377,9 +379,14 @@ public class Robot extends TimedRobot {
 	 */
 	@Override
 	public void autonomousInit() {
+		Utility.cleanSlateAllWheels(wheel);
 		wheelSpeedTimer.start();
 		wheelSpeedTimer.reset();
+		aqHandler.killQueues();
 		gyro.reset();
+		driverOriented = true;
+		emergencyTank = false;
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_4A).queueStart();
 	}
 
 	/**
@@ -387,7 +394,8 @@ public class Robot extends TimedRobot {
 	 */
 	@Override
 	public void autonomousPeriodic() {
-		// haha it's empty
+		swerve(overrideFWD, overrideSTR, overrideRCW, driverOriented);
+		aqHandler.runQueues();
 	}
 	
 	/**
@@ -418,13 +426,26 @@ public class Robot extends TimedRobot {
 
 			// Change LEDs
 			if (driverOriented) leds.setLEDs(Blinkin.C1_HEARTBEAT_MEDIUM); else leds.setLEDs(Blinkin.C2_HEARTBEAT_MEDIUM);
+
+			// Override and operate the climber
+			if (controlWorking.getPOV() == 180) {
+				climberDriverOverride = !climberDriverOverride;
+			}
+			if (climberDriverOverride) {
+				leds.setLEDs(Blinkin.COLORWAVES_RAINBOWPALETTE);
+				if (Math.abs(controlWorking.getRawAxis(Utility.AXIS_RSTICKY)) > .1) {
+					climber.set(controlWorking.getRawAxis(Utility.AXIS_RSTICKY) * .75);
+				} else climber.set(0);
+			}
 			
 			// Aim down the goal with Limelight
 			// TODO only toggles lamp right now. Should aim down target
 			if (controlWorking.getRawButtonPressed(Utility.BUTTON_LB)) limelight.toggleLamp();
 
 			// Run the autovolley routine
-			if (controlWorking.getRawAxis(Utility.AXIS_RT) > .8) aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueStart();
+			if (controlWorking.getRawAxis(Utility.AXIS_RT) > .8) {
+				/*if (!aqHandler.getQueue(QUEUE_LIMELIGHTANGLE).queueRunning())*/ aqHandler.getQueue(QUEUE_LIMELIGHTANGLE).queueStart();
+			}
 
 			// Reset the gyroscope
 			if (controlWorking.getRawButton(Utility.BUTTON_Y) && !emergencyReadjust) gyro.reset();
@@ -437,7 +458,7 @@ public class Robot extends TimedRobot {
 			  
 			// Reset the wheels based on analog sensing. For emergency purposes only
 			if (controlWorking.getRawButton(Utility.BUTTON_B) && !emergencyReadjust) {
-				Utility.zeroAllWheelsWithAnalog(wheel);
+				//Utility.zeroAllWheelsWithAnalog(wheel); analogs are not currently plugged in. disabled for now
 			}
 
 			// Toggle driver-oriented control
@@ -472,17 +493,17 @@ public class Robot extends TimedRobot {
 			// Run the flyheel at the necessary speed to shoot while against the tower and aim the shooter
 			if (controlWorking.getRawButton(Utility.BUTTON_Y)) {
 				shooter.setFlywheelSpeed(2700);
-				shooter.setPivotPosition(0);
+				shooter.setPivotPosition(580);
 				aimMode = true;
-				aimModePosition = 0;
+				aimModePosition = 580;
 			}
 
 			// Run the flywheel at the necessary speed to shoot from anywhere else and aim the shooter accordingly
 			if (controlWorking.getRawButton(Utility.BUTTON_X)) {
 				shooter.setFlywheelSpeed(3320);
-				shooter.setPivotPosition(500);
+				shooter.setPivotPosition(1000);
 				aimMode = true;
-				aimModePosition = 500;
+				aimModePosition = 1000;
 				// TODO auto aim pivot based on lidar input
 				// TODO auto set velocity according to lidar input
 			}
@@ -549,11 +570,13 @@ public class Robot extends TimedRobot {
 			}
 
 			// Run climber motor
-			if (controlWorking.getPOV() == 0) {
-				climber.set(.5);
-			} else if (controlWorking.getPOV() == 180) {
-				climber.set(-.5);
-			} else climber.set(0);
+			if (!climberDriverOverride) {
+				if (controlWorking.getPOV() == 0) {
+					climber.set(.5);
+				} else if (controlWorking.getPOV() == 180) {
+					climber.set(-.5);
+				} else climber.set(0);
+			}
 
 			// Aim down pivot if aimMode is active
 			if (aimMode) {
@@ -574,15 +597,22 @@ public class Robot extends TimedRobot {
 
 		// Run action queues
 		aqHandler.runQueues();
+
+		// Change lights
+		if (aqHandler.getQueue(QUEUE_LIMELIGHTANGLE).queueRunning()) leds.setLEDs(Blinkin.LIGHTCHASE_RED);
 		
 		// Dashboard dump
-		SmartDashboard.putNumber("ControllerID", singleDriverController);
+		if (showDiagnostics) {
+			SmartDashboard.putNumber("ControllerID", singleDriverController);
+			SmartDashboard.putNumber("Intake pivot angle", intake.getPivotPosition());
+			SmartDashboard.putNumber("Flywheel Current", shooter.getFlywheelCurrent());
+		}
+
 		SmartDashboard.putNumber("YawAxis", gyro.getYaw());
 		SmartDashboard.putBoolean("DriverOriented", driverOriented);
 		SmartDashboard.putNumber("Flywheel Velocity", shooter.getFlywheelVelocity());
 		SmartDashboard.putNumber("Flywheel Setpoint", shooter.getFlywheelSetpoint());
 		SmartDashboard.putNumber("Lidar Dist", lidar.getDistance(Lidar.Unit.INCHES));
-		SmartDashboard.putNumber("Flywheel Current", shooter.getFlywheelCurrent());
 		SmartDashboard.putNumber("Shooter pivot angle", shooter.getPivotPosition());
 
 		// End UNIVERSAL FUNCTIONS

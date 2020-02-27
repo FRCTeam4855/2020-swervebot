@@ -200,6 +200,15 @@ public class Shooter {
     }
 
     /**
+     * Takes a distance from the lidar sensor and converts it to a pivot position setpoint
+     * @param dist the distance in inches
+     * @return a double of the setpoint
+     */
+    public double getPivotPositionFromDistance(double dist) {
+        return 500 + (dist - 200) * .05;    // TEST FUNCTION, DEFINITELY DOESN'T WORK
+    }
+
+    /**
      * Zeros the pivot encoder.
      */
     public void resetPivotPosition() {

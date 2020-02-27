@@ -25,6 +25,7 @@ public class ActionQueue {
 	private double queueElapsedTime = 0;				// current elapsed time for this command in seconds
 	private double queueStartTime = 0;					// the system time during which this command started in nanoseconds
 	private double queueTotalHangTime = 0;				// when checking for sensors, the queue pauses, and this command holds how much time the queue has been paused for
+	private double queueLastNanoTime = 0;				// the previous System.nanoTime() read from sensor checking
 	private boolean queueIsRunning = false;				// if queue is enabled or not
 	private boolean queueUsesSwerveOverrides = false;	// whether or not the action queue makes use of the swerve() overrides
 
@@ -84,7 +85,7 @@ public class ActionQueue {
 	public void queueStart() {
 		if (!queueIsRunning) {
 			queueIsRunning = true;
-			queueStartTime = System.nanoTime();
+			queueStartTime = 0;
 			queueElapsedTime = 0;
 			queueTotalHangTime = 0;
 		} else queueStop();
@@ -124,9 +125,8 @@ public class ActionQueue {
 					case WAIT_FOR_SENSOR:
 						if (!ActionQueueHandler.queueCheck_Sensor(queueListTimeEnd[i], queueListParam1[i], queueListParam2[i], queueListParam3[i])) {
 							// Sensors are not ready, hang the queue
-							queueTotalHangTime = toSeconds(System.nanoTime() - queueStartTime) - queueListTimeStart[i];
 							allowTimePassage = false;
-						} else allowTimePassage = true;
+						}
 						break;
                     case PREPARE_TURN:
                         ActionQueueHandler.queuePrepare_Turn(queueListTimeEnd[i],queueListParam1[i],queueListParam2[i]);
@@ -164,6 +164,9 @@ public class ActionQueue {
 			if (queueElapsedTime == queueListTimeEnd[i] && queueListKillMotor[i]) {
 				// Kill the corresponding motor if applicable
 				switch (queueListActions[i]) {
+					case WAIT_FOR_SENSOR:
+
+						break;
 					case FEED_BALL:
 						Robot.shooter.killFeeder();
 						break;
@@ -185,8 +188,13 @@ public class ActionQueue {
 			}
 		}
 		// Pass time
-		//if (allowTimePassage) queueElapsedTime = TimeUnit.SECONDS.convert((System.nanoTime() - (long) queueStartTime), TimeUnit.NANOSECONDS) /*- queueTotalHangTime*/;	// convert system time to seconds
-		if (allowTimePassage) queueElapsedTime = toSeconds(System.nanoTime() - (long) queueStartTime) - queueTotalHangTime;	// convert system time to seconds
+		if (allowTimePassage) {
+			queueElapsedTime = toSeconds(System.nanoTime() - (long) queueStartTime) - queueTotalHangTime;	// convert system time to seconds
+		} else {
+			if (queueLastNanoTime == 0) queueLastNanoTime = System.nanoTime();
+			queueTotalHangTime += toSeconds(System.nanoTime() - queueLastNanoTime);
+			queueLastNanoTime = System.nanoTime();
+		}
 		if (queueMaxTime < queueElapsedTime) queueStop();	// if the last command has finished, the queue can stop
 		//System.out.println(queueElapsedTime);
 	}

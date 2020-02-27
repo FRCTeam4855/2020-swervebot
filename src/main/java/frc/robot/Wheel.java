@@ -343,8 +343,10 @@ public class Wheel {
 		
 		SmartDashboard.putNumber("Wheel " + myID + "Encoder", getEncoderPosition());
 		SmartDashboard.putNumber("Wheel " + myID + "Setpoint", getSetpoint());
-		SmartDashboard.putBoolean("Wheel " + myID + "Fault", getFaulty());
-		SmartDashboard.putBoolean("Wheel " + myID + "Zeroed", isZero());
+		if (Robot.showDiagnostics) {
+			SmartDashboard.putBoolean("Wheel " + myID + "Fault", getFaulty());
+			SmartDashboard.putBoolean("Wheel " + myID + "Zeroed", isZero());
+		}
 	}
 
 	/**
