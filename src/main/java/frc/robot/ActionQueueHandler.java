@@ -19,9 +19,8 @@ public class ActionQueueHandler {
 	private static double elapsedTime = -1;													// for use with the WAIT_FOR_SENSOR timer command
 	private static double startingTime = -1;												// for use with the WAIT_FOR_SENSOR timer command
 	public static boolean resetNeos = false;												// for use with the DRIVE_STRAIGHT action command
-	private static PIDController PIDWheelSpeed = new PIDController(.4, 0, 0);				// for use with the DRIVE_STRAIGHT action command
 	private static PIDController PIDRotate = new PIDController(.0077, 0, 0.0007);			// for use with the ROTATE_TO_ANGLE action command
-	private static PIDController PIDLimelightXRot = new PIDController(.0285, 0, 0.0014);	// for use with the ANGLE_TO_LIMELIGHT_X action command
+	private static PIDController PIDLimelightXRot = new PIDController(.008, 0.0009/*.00022*/, 0.0034);	// for use with the ANGLE_TO_LIMELIGHT_X action command
 
 	/**
 	 * Constructs an ActionQueueHandler. It is responsible for managing the running of every
@@ -127,30 +126,11 @@ public class ActionQueueHandler {
 	 * The queue action for driving in a straight line relative to the robot using the NEO encoders on the drive wheels.
 	 * @param timeEnd the designated time for the command to end
 	 * @param param1 the first parameter, the power at which to drive
-	 * @param param2 the second parameter, the angle at which to drive the robot to
+	 * @param param2 the second parameter, the angle to set the robot to while driving
 	 */
 	public static void queueDrive_Straight(double timeEnd, double param1, double param2) {
-		// Angle the wheels during motion and run a velocity PID calculation on each drive wheel to ensure they are all going the same speed
-		for (Wheel w : Robot.wheel) {
-			w.setSetpoint((int) param2);
-			w.motorDrive.set(PIDWheelSpeed.calculate(w.motorDrive.getEncoder().getVelocity(), param1));
-		}
-		
-		/*	PLAN B CODE
-		// Clean slate the encoders to begin the command to make certain we're using standardized values
-		if (!resetNeos) {
-			resetNeos = true;
-			for (Wheel w : Robot.wheel) {
-				w.motorDrive.getEncoder().setPosition(0);
-			}
-		}
-		
-		// Angle the wheels during motion, put wheel positions against each other and manually tune each wheel
-		*/
-
-		/* PLAN C CODE lol please don't make it come to this
-		Robot.overrideFWD = param1;
-		Robot.overrideSTR = param2;*/
+		queueTurn_To_Angle(timeEnd, param2);
+		Robot.swerve(param1, 0, Robot.overrideRCW, true);
 	}
 
 	/**
@@ -170,7 +150,7 @@ public class ActionQueueHandler {
 	 * @param timeEnd the designated time for the command to end
 	 */
 	public static void queueFeed_Ball(double timeEnd) {
-		Robot.shooter.runFeeder(.9);
+		Robot.shooter.runFeeder(-.9);
 	}
 
 	/**
@@ -180,7 +160,13 @@ public class ActionQueueHandler {
 	 * @param param2 the second parameter, which is either 1 or 0 for whether or not to use lidar
 	 */
 	public static void queueRun_Flywheel(double timeEnd, double param1, double param2) {
-		if (param2 == 0) Robot.shooter.setFlywheelSpeed(param1); else Robot.shooter.setFlywheelSpeed(Robot.shooter.getVelocityFromDistance(Robot.lidar.getDistance(Lidar.Unit.INCHES)));
+		if (param2 == 0) {
+			Robot.shooter.setFlywheelSpeed(param1);
+			//Robot.shooter.setPivotPosition(1000);	// sweet spot position
+		} else {
+			Robot.shooter.setFlywheelSpeed(Robot.shooter.getVelocityFromDistance(Robot.lidar.getDistance(Lidar.Unit.INCHES)));
+			Robot.shooter.setPivotPosition(Robot.shooter.getPivotPositionFromDistance(Robot.lidar.getDistance(Lidar.Unit.INCHES)));
+		}
 	}
 
 	/**

@@ -219,6 +219,8 @@ public class ActionQueue {
 	 */
 	private void forceKillMotor(Command action) {
 		switch (action) {
+			case SWERVE:
+				Robot.swerve(0, 0, 0, true);
 			case WAIT_FOR_SENSOR:
 				break;
 			case FEED_BALL:

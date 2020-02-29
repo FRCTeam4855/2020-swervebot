@@ -32,23 +32,40 @@ public class Intake {
         wheels.set(speed);
     }
 
+    /**
+     * Stops the intake wheels.
+     */
     public void stopIntakeWheels() {
         wheels.set(0);
     }
 
+    /**
+     * Sets the pivot arm to a certain speed.
+     * @param speed the speed to set the pivot arm to
+     */
     public void setPivot(double speed) {
         pivot.set(speed);
     }
 
+    /**
+     * Stops the pivot motor.
+     */
     public void stopPivot() {
         pivot.set(0);
     }
 
+    /**
+     * Stops both the pivot and the intake wheel motors.
+     */
     public void stop() {
         wheels.set(0);
         pivot.set(0);
     }
 
+    /**
+     * Gets the encoder position of the pivot motor
+     * @return encoder position
+     */
     public double getPivotPosition() {
         return encoder.get();
     }
