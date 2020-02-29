@@ -14,13 +14,15 @@ public class ActionQueue {
 		DEAD, WAIT_FOR_SENSOR, PREPARE_TURN, SWERVE, DRIVE_STRAIGHT, TURN_TO_ANGLE, FEED_BALL, SHOOTER_PIVOT, INTAKE_PIVOT, RUN_FLYWHEEL, RUN_INTAKE_WHEELS, ANGLE_TO_LIMELIGHT_X;
 	}
 
-	Command queueListActions [] = new Command [20];		// action ID to perform
-	double queueListTimeStart [] = new double [20];		// elapsed begin time to run a command
-	double queueListTimeEnd [] = new double [20];		// elapsed begin time to end a command
-	boolean queueListKillMotor[] = new boolean [20];	// whether to kill designated motors after the command is stopped or not
-	double queueListParam1 [] = new double [20];		// parameter 1 for queue item
-	double queueListParam2 [] = new double [20];		// parameter 2 for queue item
-	double queueListParam3 [] = new double [20];		// parameter 3 for queue item
+	Command queueListActions [] = new Command [30];		// action ID to perform
+	double queueListTimeStart [] = new double [30];		// elapsed begin time to run a command
+	double queueListTimeEnd [] = new double [30];		// elapsed begin time to end a command
+	boolean queueListKillMotor[] = new boolean [30];	// whether to kill designated motors after the command is stopped or not
+	double queueListParam1 [] = new double [30];		// parameter 1 for queue item
+	double queueListParam2 [] = new double [30];		// parameter 2 for queue item
+	double queueListParam3 [] = new double [30];		// parameter 3 for queue item
+
+	boolean queueListMotorIsDead[] = new boolean[30];	// whether or not the motor has been killed
 	
 	private double queueElapsedTime = 0;				// current elapsed time for this command in seconds
 	private double queueStartTime = 0;					// the system time during which this command started in nanoseconds
@@ -39,6 +41,7 @@ public class ActionQueue {
 	 */
 	public ActionQueue(boolean overrides) {
 		queueUsesSwerveOverrides = overrides;
+		resetQueueDeadMotorFlags();
 	}
 
 	/**
@@ -85,9 +88,10 @@ public class ActionQueue {
 	public void queueStart() {
 		if (!queueIsRunning) {
 			queueIsRunning = true;
-			queueStartTime = 0;
+			queueStartTime = System.nanoTime();
 			queueElapsedTime = 0;
 			queueTotalHangTime = 0;
+			resetQueueDeadMotorFlags();
 		} else queueStop();
 	}
 	
@@ -95,6 +99,12 @@ public class ActionQueue {
 	 * Stops the queue.
 	 */
 	public void queueStop() {
+		// Kill any motors that need to be stopped
+		for (int command = 0; command < queueLength; command ++) {
+			if (queueListKillMotor[command] && !queueListMotorIsDead[command]) {
+				forceKillMotor(queueListActions[command]);
+			}
+		}
 		queueIsRunning = false;
 		queueElapsedTime = 0;
 		if (queueUsesSwerveOverrides) {
@@ -161,42 +171,28 @@ public class ActionQueue {
                         break;
                 }
 			}
-			if (queueElapsedTime == queueListTimeEnd[i] && queueListKillMotor[i]) {
+			if (queueElapsedTime >= queueListTimeEnd[i] && queueListKillMotor[i] && !queueListMotorIsDead[i]) {
 				// Kill the corresponding motor if applicable
-				switch (queueListActions[i]) {
-					case WAIT_FOR_SENSOR:
-
-						break;
-					case FEED_BALL:
-						Robot.shooter.killFeeder();
-						break;
-					case RUN_FLYWHEEL:
-						Robot.shooter.killFlywheel();
-						break;
-					case RUN_INTAKE_WHEELS:
-						Robot.intake.stopIntakeWheels();
-						break;
-					case INTAKE_PIVOT:
-						Robot.intake.stopPivot();
-						break;
-					case DRIVE_STRAIGHT:
-						ActionQueueHandler.resetNeos = false;
-						break;
-					default:
-						break;
-				}
+				forceKillMotor(queueListActions[i]);
+				queueListMotorIsDead[i] = true;
 			}
 		}
+
 		// Pass time
 		if (allowTimePassage) {
-			queueElapsedTime = toSeconds(System.nanoTime() - (long) queueStartTime) - queueTotalHangTime;	// convert system time to seconds
+			queueElapsedTime = toSeconds(System.nanoTime() - queueStartTime) - queueTotalHangTime;	// convert system time to seconds
 		} else {
 			if (queueLastNanoTime == 0) queueLastNanoTime = System.nanoTime();
 			queueTotalHangTime += toSeconds(System.nanoTime() - queueLastNanoTime);
 			queueLastNanoTime = System.nanoTime();
 		}
-		if (queueMaxTime < queueElapsedTime) queueStop();	// if the last command has finished, the queue can stop
-		//System.out.println(queueElapsedTime);
+
+		// If the last command has finished, the queue can stop
+		if (queueMaxTime < queueElapsedTime) {
+			queueStop();
+			System.out.println("Finished. (" + queueMaxTime + ") sec long, finished at (" + queueElapsedTime + ")");
+		}
+		System.out.println(queueElapsedTime);
 	}
 
 	/**
@@ -206,5 +202,42 @@ public class ActionQueue {
 	 */
 	private double toSeconds(double nanoseconds) {
 		return nanoseconds / 1000000000.0;
+	}
+
+	/**
+	 * Resets the flags for when motors have been stopped.
+	 */
+	private void resetQueueDeadMotorFlags() {
+		for (int i = 0; i < 30; i ++) {
+			queueListMotorIsDead[i] = false;
+		}
+	}
+
+	/**
+	 * Force stops a motor based on its action.
+	 * @param action the command to stop
+	 */
+	private void forceKillMotor(Command action) {
+		switch (action) {
+			case WAIT_FOR_SENSOR:
+				break;
+			case FEED_BALL:
+				Robot.shooter.killFeeder();
+				break;
+			case RUN_FLYWHEEL:
+				Robot.shooter.killFlywheel();
+				break;
+			case RUN_INTAKE_WHEELS:
+				Robot.intake.stopIntakeWheels();
+				break;
+			case INTAKE_PIVOT:
+				Robot.intake.stopPivot();
+				break;
+			case DRIVE_STRAIGHT:
+				ActionQueueHandler.resetNeos = false;
+				break;
+			default:
+				break;
+		}
 	}
 }

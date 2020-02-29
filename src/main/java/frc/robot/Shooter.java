@@ -205,7 +205,8 @@ public class Shooter {
      * @return a double of the setpoint
      */
     public double getPivotPositionFromDistance(double dist) {
-        return 500 + (dist - 200) * .05;    // TEST FUNCTION, DEFINITELY DOESN'T WORK
+        if (dist < 40 || dist > 450) return getPivotPosition(); // probably not valid, just use previous position
+        return -.0079 * Math.pow(dist, 2) + 4.15 * dist + 510;
     }
 
     /**

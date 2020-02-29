@@ -11,7 +11,7 @@ import edu.wpi.first.wpilibj.Spark;
 public class Intake {
     private Spark pivot;
     private Spark wheels;
-    public Encoder encoder; // TODO make private
+    private Encoder encoder;
     
     /**
      * Constructs an instance of Intake. It consists of a pivot arm and intake wheels, both driven by Spark motor controllers.
