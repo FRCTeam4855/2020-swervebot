@@ -123,7 +123,7 @@ public class ActionQueueHandler {
 	}
 
 	/**
-	 * The queue action for driving in a straight line relative to the robot using the NEO encoders on the drive wheels.
+	 * The queue action for driving in a straight line relative to the field.
 	 * @param timeEnd the designated time for the command to end
 	 * @param param1 the first parameter, the power at which to drive
 	 * @param param2 the second parameter, the angle to set the robot to while driving
@@ -141,7 +141,7 @@ public class ActionQueueHandler {
 	 */
 	public static void queueTurn_To_Angle(double timeEnd, double param1) {
 		double rotValue = PIDRotate.calculate(Robot.gyro.getYaw(), param1);	// calculate rotation input to a PID loop
-		rotValue = MathUtil.clamp(rotValue, -.42, .42);						// make sure robot doesn't attempt to rotate too fast
+		rotValue = MathUtil.clamp(rotValue, -.28, .28);						// make sure robot doesn't attempt to rotate too fast
 		Robot.overrideRCW = rotValue;
 	}
 
