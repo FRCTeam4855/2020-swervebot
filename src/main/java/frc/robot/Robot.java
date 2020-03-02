@@ -354,16 +354,18 @@ public class Robot extends TimedRobot {
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.SWERVE, 7, 8, true, 0, 0, 0);					// stop driving
 
 		// Autonomous Routine 1B - Start in front of station 1, shoot, pick up balls directly behind machine and shoot again
-		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.ANGLE_TO_LIMELIGHT_X, 0, 150, false, 0, 0, 0);	// find target from Limelight
-		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.RUN_FLYWHEEL, 0, 350, true, 0, 1, 0);				// run shooter based on lidar input
-		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.FEED_BALL, 120, 240, true, 0, 0, 0);				// feed balls into into shooter
-		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.TURN_TO_ANGLE, 340, 460, false, 180, 0, 0);		// turn the robot around
-		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.DRIVE_STRAIGHT, 400, 550, true, -.3, 0, 0);		// approach other balls
-		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.RUN_INTAKE_WHEELS, 440, 550, true, .7, 0, 0);		// suck in balls
-		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.TURN_TO_ANGLE, 580, 660, false, 0, 0, 0);			// turn back around to 0 degrees
-		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.DRIVE_STRAIGHT, 580, 690, false, .3, 0, 0);		// drive toward goal
-		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.RUN_FLYWHEEL, 700, 900, true, 0, 1, 0);			// run shooter based on lidar input
-		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.FEED_BALL, 703, 830, true, 0, 0, 0);				// feed balls into shooter
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.INTAKE_PIVOT, 0, 1.9, true, .35, 0, 0);		// bring down intake pivot
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.RUN_FLYWHEEL, 0, 3.7, true, 3320, 0, 0);		// turn on flywheel
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.WAIT_FOR_SENSOR, 1, 1.01, false, 1, 0, 0);	// wait to reach speed
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.FEED_BALL, 1.1, 3.5, true, 0, 0, 0);			// feed balls into shooter
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.DRIVE_STRAIGHT, 3.8, 7, true, -.3, 0, 180);	// turn around and drive
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.RUN_INTAKE_WHEELS, 4.2, 7, true, 1, 0, 0);	// intake balls
+		// TODO *something something check drive encoders for distance*
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.TURN_TO_ANGLE, 7, 9, true, 180, 0, 0);		// turn robot around
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.ANGLE_TO_LIMELIGHT_X, 8.6, 9, true, 1, 0, 0);	// angle to target
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.RUN_FLYWHEEL, 7, 12, true, 3320, 0, 0);		// turn on flywheel
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.WAIT_FOR_SENSOR, 7.3, 7.31, false, 1, 0, 0);	// wait to reach speed
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.FEED_BALL, 8, 11.5, true, 0, 0, 0);			// feed balls into shooter
 
 		// Autonomous Routine 4A - Autocross from any location
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_4A).queueFeed(ActionQueue.Command.DRIVE_STRAIGHT, 1, 3, false, -.2, 0, 0);
@@ -480,7 +482,7 @@ public class Robot extends TimedRobot {
 	 * This function is called when teleop begins
 	 */
 	public void teleopInit() {
-		// TODO make transistion between auton and teleop seamless without reset a bunch of wheel positions
+		// TODO make transistion between auton and teleop seamless without resetting a bunch of wheel positions
 		if (!DriverStation.getInstance().isFMSAttached()) {
 			Utility.cleanSlateAllWheels(wheel);
 			wheelSpeedTimer.start();
@@ -575,7 +577,7 @@ public class Robot extends TimedRobot {
 			// Run the flyheel at the necessary speed to shoot while against the tower and aim the shooter
 			if (controlWorking.getRawButton(Utility.BUTTON_Y)) {
 				shooter.setFlywheelSpeed(2700);
-				shooter.setPivotPosition(580);
+				shooter.setPivotPosition(580);	// TODO this no longer works
 				aimMode = true;
 				aimLobShot = true;
 				aimModePosition = 580;
@@ -584,7 +586,7 @@ public class Robot extends TimedRobot {
 			// Run the flywheel at the necessary speed to shoot from anywhere else and aim the shooter accordingly
 			if (controlWorking.getRawButton(Utility.BUTTON_X)) {
 				shooter.setFlywheelSpeed(3320);
-				shooter.setPivotPosition(1000);
+				shooter.setPivotPosition(1000);	// TODO this no longer works
 				aimMode = true;
 				aimLobShot = false;
 				aimModePosition = 1000; // default starting position
