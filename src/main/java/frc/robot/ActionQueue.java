@@ -145,7 +145,7 @@ public class ActionQueue {
                         ActionQueueHandler.queueSwerve(queueListTimeEnd[i],queueListParam1[i],queueListParam2[i],queueListParam3[i]);
 						break;
 					case DRIVE_STRAIGHT:
-						ActionQueueHandler.queueDrive_Straight(queueListTimeEnd[i],queueListParam1[i], queueListParam2[i]);
+						ActionQueueHandler.queueDrive_Straight(queueListTimeEnd[i],queueListParam1[i], queueListParam2[i], queueListParam3[i]);
 						break;
 					case TURN_TO_ANGLE:
 						ActionQueueHandler.queueTurn_To_Angle(queueListTimeEnd[i], queueListParam1[i]);

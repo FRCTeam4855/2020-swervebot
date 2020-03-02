@@ -125,12 +125,20 @@ public class ActionQueueHandler {
 	/**
 	 * The queue action for driving in a straight line relative to the field.
 	 * @param timeEnd the designated time for the command to end
-	 * @param param1 the first parameter, the power at which to drive
-	 * @param param2 the second parameter, the angle to set the robot to while driving
+	 * @param param1 the first parameter, the power at which to drive (1 for full speed)
+	 * @param param2 the second parameter, the angle at which to drive in degrees
+	 * @param param3 the third parameter, the angle to keep the robot set to while driving
 	 */
-	public static void queueDrive_Straight(double timeEnd, double param1, double param2) {
+	public static void queueDrive_Straight(double timeEnd, double param1, double param2, double param3) {
+		// Calculate using inverse arctan2, the same way we would normally calculate swerve parameters
+		double fwd = Math.cos(param2 * Math.PI / 180) * param1;
+		double str = Math.sin(param2 * Math.PI / 180) * param1;
+
+		// Turn the robot to an angle as this is happening
 		queueTurn_To_Angle(timeEnd, param2);
-		Robot.swerve(param1, 0, Robot.overrideRCW, true);
+
+		// Put all three together
+		Robot.swerve(fwd, str, Robot.overrideRCW, true);
 	}
 
 	/**
@@ -142,7 +150,7 @@ public class ActionQueueHandler {
 	public static void queueTurn_To_Angle(double timeEnd, double param1) {
 		double rotValue = PIDRotate.calculate(Robot.gyro.getYaw(), param1);	// calculate rotation input to a PID loop
 		rotValue = MathUtil.clamp(rotValue, -.28, .28);						// make sure robot doesn't attempt to rotate too fast
-		Robot.overrideRCW = rotValue;
+		Robot.overrideRCW = rotValue;										// set the override to the PID adjusted value, taking away rotational control from user
 	}
 
 	/**
@@ -162,7 +170,7 @@ public class ActionQueueHandler {
 	public static void queueRun_Flywheel(double timeEnd, double param1, double param2) {
 		if (param2 == 0) {
 			Robot.shooter.setFlywheelSpeed(param1);
-			//Robot.shooter.setPivotPosition(1000);	// sweet spot position
+			//Robot.shooter.setPivotPosition(1000);	// former sweet spot position
 		} else {
 			Robot.shooter.setFlywheelSpeed(Robot.shooter.getVelocityFromDistance(Robot.lidar.getDistance(Lidar.Unit.INCHES)));
 			Robot.shooter.setPivotPosition(Robot.shooter.getPivotPositionFromDistance(Robot.lidar.getDistance(Lidar.Unit.INCHES)));

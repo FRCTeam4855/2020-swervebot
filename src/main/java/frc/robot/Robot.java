@@ -20,6 +20,7 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
 import edu.wpi.cscore.UsbCamera;
+import edu.wpi.cscore.VideoSink;
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -61,10 +62,7 @@ public class Robot extends TimedRobot {
 	boolean emergencyReadjust = false;			// if hell has come to earth and you need to manually adjust wheels during a match, this will be enabled
 	String playType = "MATCH";					// whether to act as if in a match ("MATCH") or testing ("TEST")
 	// All for calculating wheel speed/angle, if you need to read from a motor don't pull from these
-	static double a, b, c, d, max, temp, rads; 
-	static double encoderSetpointA, encoderSetpointB, encoderSetpointC, encoderSetpointD;
 	static double jStr, jFwd, jRcw;
-	static double wheelSpeed1, wheelSpeed2, wheelSpeed3, wheelSpeed4;
 	static double overrideSTR = 0, overrideFWD = 0, overrideRCW = 0;		// set these variables to override drive() values
 	// Gradual starts/stops in teleop
 	static double wheelSpeedActual1 = 0, wheelSpeedActual2 = 0, wheelSpeedActual3 = 0, wheelSpeedActual4 = 0;
@@ -119,7 +117,9 @@ public class Robot extends TimedRobot {
 	PWMVictorSPX climber = new PWMVictorSPX(3);
 
 	// USB Camera Constructor
-	UsbCamera camera;
+	UsbCamera camForward;
+	UsbCamera camClimb;
+	VideoSink server;
 	//=======================================
 	
 	// COMPUTATIONAL SOFTWARE STUFF
@@ -228,6 +228,11 @@ public class Robot extends TimedRobot {
 	 * @param RCW The desired rotation speed of the robot
 	 */
 	public static void swerve(double FWD, double STR, double RCW, boolean driverOriented) {
+		// Local method variables
+		double a, b, c, d, max, temp, rads; 
+		double encoderSetpointA, encoderSetpointB, encoderSetpointC, encoderSetpointD;
+		double wheelSpeed1, wheelSpeed2, wheelSpeed3, wheelSpeed4;
+
 		if (driverOriented) {
 			rads = gyro.getYaw() * Math.PI / 180;
 			temp = FWD * Math.cos(rads) + STR * Math.sin(rads);
@@ -312,12 +317,23 @@ public class Robot extends TimedRobot {
 	@Override
 	public void robotInit() {
 
-		// Configure USB camera
-		camera = CameraServer.getInstance().startAutomaticCapture(0);
-		camera.setBrightness(20);
-		camera.setExposureManual(50);
-		camera.setResolution(160, 120);
-		camera.setFPS(15);
+		// Configure USB camera 1
+		camForward = CameraServer.getInstance().startAutomaticCapture(0);
+		camForward.setBrightness(20);
+		camForward.setExposureManual(50);
+		camForward.setResolution(160, 120);
+		camForward.setFPS(15);
+
+		// Configure USB camera 2
+		camClimb = CameraServer.getInstance().startAutomaticCapture(1);
+		camClimb.setBrightness(20);
+		camClimb.setExposureManual(50);
+		camClimb.setResolution(160, 120);
+		camClimb.setFPS(15);
+
+		// Configure server to only watch the normal camera
+		server = CameraServer.getInstance().getServer();
+		server.setSource(camForward);
 		
 		aqHandler = new ActionQueueHandler(aqArray);
 
@@ -383,6 +399,9 @@ public class Robot extends TimedRobot {
 		a_startType = (int) SmartDashboard.getNumber("Auto: Station #", 4);
 		a_autoType = SmartDashboard.getString("Auto: Routine Type", "a").charAt(0);
 		a_truncateRoutine = SmartDashboard.getBoolean("Auto: Truncate", a_truncateRoutine);
+
+		// Keep Limelight lamps turned off
+		limelight.turnOffLamp();
 	}
 	
 	/**
@@ -453,8 +472,8 @@ public class Robot extends TimedRobot {
 	 */
 	@Override
 	public void autonomousPeriodic() {
-		//swerve(overrideFWD, overrideSTR, overrideRCW, driverOriented);
 		aqHandler.runQueues();
+		leds.setLEDs(Blinkin.C2_STROBE);
 	}
 	
 	/**
@@ -462,13 +481,15 @@ public class Robot extends TimedRobot {
 	 */
 	public void teleopInit() {
 		// TODO make transistion between auton and teleop seamless without reset a bunch of wheel positions
-		Utility.cleanSlateAllWheels(wheel);
-		wheelSpeedTimer.start();
-		wheelSpeedTimer.reset();
-		aqHandler.killQueues();
-		gyro.reset();
-		driverOriented = true;
-		emergencyTank = false;
+		if (!DriverStation.getInstance().isFMSAttached()) {
+			Utility.cleanSlateAllWheels(wheel);
+			wheelSpeedTimer.start();
+			wheelSpeedTimer.reset();
+			aqHandler.killQueues();
+			gyro.reset();
+			driverOriented = true;
+			emergencyTank = false;
+		}
 	}
 	
 	/**
@@ -489,6 +510,7 @@ public class Robot extends TimedRobot {
 
 			// Override and operate the climber
 			if (controlWorking.getPOV() == 180) {
+				if (climberDriverOverride) server.setSource(camForward); else server.setSource(camClimb);
 				climberDriverOverride = !climberDriverOverride;
 			}
 			if (climberDriverOverride) {
@@ -501,17 +523,10 @@ public class Robot extends TimedRobot {
 			// Aim down the goal with Limelight
 			if (controlWorking.getRawButton(Utility.BUTTON_LB)) {
 				limelight.turnOnLamp();
-				//if (aqHandler.getQueue(QUEUE_LIMELIGHTANGLE).queueRunning()) aqHandler.getQueue(QUEUE_LIMELIGHTANGLE).queueStart();
 				ActionQueueHandler.queueAngle_To_Limelight_X(0);
 			} else {
 				limelight.turnOffLamp();
 				overrideRCW = 0;
-			}
-
-			// Run the autovolley routine
-			// TODO this is just a test, remove it later
-			if (controlWorking.getRawAxis(Utility.AXIS_RT) > .8) {
-				if (!aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueRunning()) aqHandler.getQueue(QUEUE_SHOOTVOLLEY).queueStart();
 			}
 
 			// Reset the gyroscope

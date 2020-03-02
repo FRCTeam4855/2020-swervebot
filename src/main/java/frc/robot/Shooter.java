@@ -23,8 +23,8 @@ public class Shooter {
     private double velocitySetpoint = 0;        // the desired velocity setpoint for the flywheel
     private int speedUpTime = -1;               // the amount of program ticks remaining for the shooter to be fed by percentage input
     private boolean isRunning = false;          // whether or not the flywheel is running
-    private final int MAX_SPEEDUP_TICKS = 90;   // the flywheel will have 90 ticks to increase the speed to roughly where it needs to be via percent output
-    private final int ACCEPTABLE_ERROR = 40;    // the acceptable error to reasonably state that the shooter is ready to shoot
+    private final int MAX_SPEEDUP_TICKS = 50;   // the flywheel will have 50 ticks to increase the speed to roughly where it needs to be via percent output
+    private final int ACCEPTABLE_ERROR = 50;    // the acceptable error to reasonably state that the shooter is ready to shoot
     private enum Phase {
         OFF, SPEED_UP, LOCK_IN
     }
@@ -36,7 +36,7 @@ public class Shooter {
 
     // Define hardware
     private Spark feeder;
-    private TalonSRX pivot;         // position control is operated by a P loop of 2.2 and a clamp of 50% power, configured in Phoenix Tuner
+    private TalonSRX pivot;
     private CANSparkMax flywheel; 
     private CANPIDController PID;
     private PIDController pivotPID;
@@ -61,7 +61,7 @@ public class Shooter {
         PID.setFF(kF);
         pivot.configPeakOutputForward(.3);
         pivot.configPeakOutputReverse(-.3);
-        pivotPID = new PIDController(.01, 0, 0);
+        pivotPID = new PIDController(.02, 0, 0);
     }
 
     /**
@@ -73,7 +73,7 @@ public class Shooter {
         setpoint = MathUtil.clamp(setpoint, 0, 4500);
         velocitySetpoint = setpoint;
         isRunning = true;
-        switch (currentPhase) {
+        if (Robot.showDiagnostics) switch (currentPhase) {
             case SPEED_UP:
                 SmartDashboard.putString("Phase", "SPEED_UP");
                 break;
@@ -206,7 +206,7 @@ public class Shooter {
      */
     public double getPivotPositionFromDistance(double dist) {
         if (dist < 40 || dist > 450) return getPivotPosition(); // probably not valid, just use previous position
-        return -.0079 * Math.pow(dist, 2) + 4.15 * dist + 510;
+        return -.0079 * Math.pow(dist, 2) + 4.15 * dist + 510;  // TODO this entire method needs to be updated after the 90 degree gearbox got ripped out
     }
 
     /**
