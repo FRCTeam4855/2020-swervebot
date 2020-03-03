@@ -94,6 +94,14 @@ public class ActionQueueHandler {
 			case 2:
 				// Wait for the robot to be turned to an absolute angle (doesn't work when angling with Limelight)
 				return Robot.gyro.getYaw() - param2 < param3;
+			case 3:
+				// Wait for the robot to travel a certain distance, +/-, reading off the neo encoder values
+				double driveAverage = 0;
+				for (Wheel w : Robot.wheel) {
+					driveAverage += w.motorDrive.getEncoder().getPosition();
+				}
+				driveAverage /= 4.0;
+				return driveAverage + param2 * Math.signum(driveAverage) > param3 * Math.signum(driveAverage);
 			default:
 				break;
 		}

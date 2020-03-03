@@ -167,6 +167,10 @@ public class ActionQueue {
 						break;
 					case INTAKE_PIVOT:
 						ActionQueueHandler.queueIntake_Pivot(queueListTimeEnd[i], queueListParam1[i]);
+						break;
+					case RESET_DRIVE_ENCODERS:
+						ActionQueueHandler.queueReset_Drive_Encoders(queueListTimeEnd[i]);
+						break;
 					default:
                         break;
                 }

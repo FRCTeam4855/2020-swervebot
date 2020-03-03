@@ -359,11 +359,12 @@ public class Robot extends TimedRobot {
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.RUN_FLYWHEEL, 0, 3.7, true, 3320, 0, 0);		// turn on flywheel
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.WAIT_FOR_SENSOR, 1, 1.01, false, 1, 0, 0);	// wait to reach speed
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.FEED_BALL, 1.1, 3.5, true, 0, 0, 0);			// feed balls into shooter
+		// At this point, the first clip has been unloaded
 		// TODO *something something use color sensor to count balls*
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.DRIVE_STRAIGHT, 3.8, 7, true, -.3, 0, 180);	// turn around and drive
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.RUN_INTAKE_WHEELS, 4.2, 7, true, 1, 0, 0);	// intake balls
 		// TODO *something something check drive encoders for distance*
-		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.TURN_TO_ANGLE, 7, 9, true, 180, 0, 0);		// turn robot around
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.TURN_TO_ANGLE, 7, 9, true, 0, 0, 0);			// turn robot around
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.ANGLE_TO_LIMELIGHT_X, 8.6, 9, true, 1, 0, 0);	// angle to target
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.RUN_FLYWHEEL, 7, 12, true, 3320, 0, 0);		// turn on flywheel
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.WAIT_FOR_SENSOR, 7.3, 7.31, false, 1, 0, 0);	// wait to reach speed
