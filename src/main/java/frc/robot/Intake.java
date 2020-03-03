@@ -63,7 +63,7 @@ public class Intake {
     }
 
     /**
-     * Gets the encoder position of the pivot motor
+     * Gets the encoder position of the pivot motor.
      * @return encoder position
      */
     public double getPivotPosition() {

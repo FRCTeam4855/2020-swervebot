@@ -18,7 +18,6 @@ public class ActionQueueHandler {
 	private ActionQueue[] queues;															// array to hold all the action queues in Robot
 	private static double elapsedTime = -1;													// for use with the WAIT_FOR_SENSOR timer command
 	private static double startingTime = -1;												// for use with the WAIT_FOR_SENSOR timer command
-	public static boolean resetNeos = false;												// for use with the DRIVE_STRAIGHT action command
 	private static PIDController PIDRotate = new PIDController(.0077, 0, 0.0007);			// for use with the ROTATE_TO_ANGLE action command
 	private static PIDController PIDLimelightXRot = new PIDController(.008, 0.0009/*.00022*/, 0.0034);	// for use with the ANGLE_TO_LIMELIGHT_X action command
 
@@ -102,7 +101,7 @@ public class ActionQueueHandler {
 	}
 
 	/**
-	 * The queue action for preparing a turn. This is functionally similar to the queueSwerve command
+	 * The queue action for preparing a turn. This is functionally similar to the queueSwerve method.
 	 * @param timeEnd the designated time for the command to end
 	 * @param param1 the first parameter, the fwd input
 	 * @param param2 the second parameter, the str input
@@ -191,8 +190,9 @@ public class ActionQueueHandler {
 	 * @param timeEnd the designated time for the command to end
 	 */
 	public static void queueAngle_To_Limelight_X(double timeEnd) {
-		double rotValue = PIDLimelightXRot.calculate(Robot.limelight.getTargetX(), 0);	// calculate rotation input to a PID loop
-		rotValue = MathUtil.clamp(rotValue, -.29, .29);						// make sure robot doesn't attempt to rotate too fast
+		double rotValue = PIDLimelightXRot.calculate(Robot.limelight.getTargetX(), 0);			// calculate rotation input to a PID loop
+		rotValue = MathUtil.clamp(rotValue, -.29, .29);											// make sure robot doesn't attempt to rotate too fast
+		if (Math.abs(Robot.limelight.getTargetX()) < Robot.LIMELIGHT_MAXTOLERANCE) rotValue = 0;// if we're close enough, then don't bother trying to move
 		Robot.overrideRCW = -rotValue;
 	}
 
@@ -212,5 +212,15 @@ public class ActionQueueHandler {
 	 */
 	public static void queueIntake_Pivot(double timeEnd, double param1) {
 		Robot.intake.setPivot(param1);
+	}
+
+	/**
+	 * The queue action to reset each of the Neo encoders
+	 * @param timeEnd the designated time for the command to end
+	 */
+	public static void queueReset_Drive_Encoders(double timeEnd) {
+		for (Wheel w : Robot.wheel) {
+			w.motorDrive.getEncoder().setPosition(0);
+		}
 	}
 }

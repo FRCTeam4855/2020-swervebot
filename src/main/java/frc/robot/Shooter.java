@@ -205,8 +205,8 @@ public class Shooter {
      * @return a double of the setpoint
      */
     public double getPivotPositionFromDistance(double dist) {
-        if (dist < 40 || dist > 450) return getPivotPosition(); // probably not valid, just use previous position
-        return -.006 * Math.pow(dist, 2) + 4.247 * dist + 294;  // TODO this entire method needs to be updated after the 90 degree gearbox got ripped out
+        if (dist < 90 || dist > 450) return getPivotPosition(); // probably not valid, just use previous position
+        return -.006 * Math.pow(dist, 2) + 4.247 * dist + 294;
     }
 
     /**

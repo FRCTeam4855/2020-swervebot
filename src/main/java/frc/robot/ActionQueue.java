@@ -11,7 +11,7 @@ package frc.robot;
 public class ActionQueue {
 
 	enum Command {
-		DEAD, WAIT_FOR_SENSOR, PREPARE_TURN, SWERVE, DRIVE_STRAIGHT, TURN_TO_ANGLE, FEED_BALL, SHOOTER_PIVOT, INTAKE_PIVOT, RUN_FLYWHEEL, RUN_INTAKE_WHEELS, ANGLE_TO_LIMELIGHT_X;
+		DEAD, WAIT_FOR_SENSOR, PREPARE_TURN, SWERVE, DRIVE_STRAIGHT, TURN_TO_ANGLE, FEED_BALL, SHOOTER_PIVOT, INTAKE_PIVOT, RUN_FLYWHEEL, RUN_INTAKE_WHEELS, ANGLE_TO_LIMELIGHT_X, RESET_DRIVE_ENCODERS;
 	}
 
 	Command queueListActions [] = new Command [30];		// action ID to perform
@@ -236,7 +236,7 @@ public class ActionQueue {
 				Robot.intake.stopPivot();
 				break;
 			case DRIVE_STRAIGHT:
-				ActionQueueHandler.resetNeos = false;
+				Robot.swerve(0, 0, 0, true);
 				break;
 			default:
 				break;

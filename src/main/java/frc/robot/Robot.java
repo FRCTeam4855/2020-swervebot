@@ -41,6 +41,7 @@ public class Robot extends TimedRobot {
 	final double CONTROL_SPEEDREDUCTION_PRECISION = 3.6;		// teleop drivetrain inputs are divided by this number when precision trigger is engaged
 	final double CONTROL_DEADZONE = 0.23;       			    // minimum value before joystick inputs will be considered on the swerves
 	final boolean CONTROL_AUTOFAULT_HANDLE = false;				// whether or not the robot will automatically react to a faulty wheel and flip to tank drive
+	final static double LIMELIGHT_MAXTOLERANCE = 1.5;			// the maximum +/- on limelight x to stop attempting to move the robot
 	boolean INTERFACE_SINGLEDRIVER = false;  		  			// whether or not to enable or disable single driver input (press START to switch between controllers)
 	
 	// OTHER CONSTANTS
@@ -358,6 +359,7 @@ public class Robot extends TimedRobot {
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.RUN_FLYWHEEL, 0, 3.7, true, 3320, 0, 0);		// turn on flywheel
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.WAIT_FOR_SENSOR, 1, 1.01, false, 1, 0, 0);	// wait to reach speed
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.FEED_BALL, 1.1, 3.5, true, 0, 0, 0);			// feed balls into shooter
+		// TODO *something something use color sensor to count balls*
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.DRIVE_STRAIGHT, 3.8, 7, true, -.3, 0, 180);	// turn around and drive
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.RUN_INTAKE_WHEELS, 4.2, 7, true, 1, 0, 0);	// intake balls
 		// TODO *something something check drive encoders for distance*
@@ -399,7 +401,7 @@ public class Robot extends TimedRobot {
 		SmartDashboard.putBoolean("Auto: Truncate", a_truncateRoutine);
 
 		a_startType = (int) SmartDashboard.getNumber("Auto: Station #", 4);
-		a_autoType = SmartDashboard.getString("Auto: Routine Type", "a").charAt(0);
+		a_autoType = SmartDashboard.getString("Auto: Routine Type", "a").toLowerCase().charAt(0);
 		a_truncateRoutine = SmartDashboard.getBoolean("Auto: Truncate", a_truncateRoutine);
 
 		// Keep Limelight lamps turned off
@@ -482,7 +484,7 @@ public class Robot extends TimedRobot {
 	 * This function is called when teleop begins
 	 */
 	public void teleopInit() {
-		// TODO make transistion between auton and teleop seamless without resetting a bunch of wheel positions
+		// TODO check that transistion between auton and teleop is seamless without resetting a bunch of wheel positions
 		if (!DriverStation.getInstance().isFMSAttached()) {
 			Utility.cleanSlateAllWheels(wheel);
 			wheelSpeedTimer.start();
@@ -699,9 +701,11 @@ public class Robot extends TimedRobot {
 		// Dashboard dump
 		if (showDiagnostics) {
 			SmartDashboard.putNumber("ControllerID", singleDriverController);
-			SmartDashboard.putNumber("Intake pivot angle", intake.getPivotPosition());
+			
 			SmartDashboard.putNumber("Flywheel Current", shooter.getFlywheelCurrent());
 		}
+
+		SmartDashboard.putNumber("Intake pivot angle", intake.getPivotPosition()); // temporary for testing
 
 		SmartDashboard.putNumber("YawAxis", gyro.getYaw());
 		SmartDashboard.putBoolean("DriverOriented", driverOriented);

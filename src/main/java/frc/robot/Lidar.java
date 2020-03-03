@@ -14,6 +14,10 @@ public class Lidar {
         INCHES, CENTIMETERS
     }
 
+    /**
+     * Creates a Lidar on the robot
+     * @param port the DIO port that the Lidar unit's PWM cable is plugged into
+     */
     public Lidar(int port) {
         device = new Counter(port);
         device.setMaxPeriod(1.00);
