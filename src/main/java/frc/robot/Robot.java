@@ -577,16 +577,16 @@ public class Robot extends TimedRobot {
 			// Run the flyheel at the necessary speed to shoot while against the tower and aim the shooter
 			if (controlWorking.getRawButton(Utility.BUTTON_Y)) {
 				shooter.setFlywheelSpeed(2700);
-				shooter.setPivotPosition(580);	// TODO this no longer works
+				shooter.setPivotPosition(130);
 				aimMode = true;
 				aimLobShot = true;
-				aimModePosition = 580;
+				aimModePosition = 130;
 			}
 
 			// Run the flywheel at the necessary speed to shoot from anywhere else and aim the shooter accordingly
 			if (controlWorking.getRawButton(Utility.BUTTON_X)) {
-				shooter.setFlywheelSpeed(3320);
-				shooter.setPivotPosition(1000);	// TODO this no longer works
+				shooter.setFlywheelSpeed(3000);	// default speed position
+				shooter.setPivotPosition(1000);
 				aimMode = true;
 				aimLobShot = false;
 				aimModePosition = 1000; // default starting position
@@ -619,13 +619,18 @@ public class Robot extends TimedRobot {
 				}
 				// Auto-aiming
 				if (aimMode && !aimLobShot) {
-					shooter.setPivotPosition(shooter.getPivotPositionFromDistance(lidar.getDistance(Lidar.Unit.INCHES)));
+					shooter.setFlywheelSpeed(shooter.getVelocityFromDistance(lidar.getDistance(Lidar.Unit.INCHES)));
+					double setAim = shooter.getPivotPositionFromDistance(lidar.getDistance(Lidar.Unit.INCHES));
+					aimModePosition = setAim;
 				}
 			} else {
 				// Manually set power to forward or backward of flywheel while it isn't in setpoint mode
 				SmartDashboard.putBoolean("Ready to fire", false);
-				if (controlWorking.getPOV() == 90) shooter.setFlywheelPercentSpeed(.3);
-				if (controlWorking.getPOV() == 270) shooter.setFlywheelPercentSpeed(-.3);
+				if (controlWorking.getPOV() == 90) 
+					shooter.setFlywheelPercentSpeed(-.3);
+				else if (controlWorking.getPOV() == 270) 
+					shooter.setFlywheelPercentSpeed(.3);
+				else shooter.setFlywheelPercentSpeed(0);
 			}
 
 			// Run the shooter pivot
@@ -654,7 +659,7 @@ public class Robot extends TimedRobot {
 			} else if (!aimMode) intake.setPivot(0);
 
 			// Zero out the shooter pivot encoder
-			if (controlWorking.getRawButtonPressed(Utility.BUTTON_RB)) {
+			if (controlWorking.getRawButtonPressed(Utility.BUTTON_START)) {
 				shooter.resetPivotPosition();
 			}
 

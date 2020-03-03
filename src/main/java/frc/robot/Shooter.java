@@ -61,7 +61,7 @@ public class Shooter {
         PID.setFF(kF);
         pivot.configPeakOutputForward(.3);
         pivot.configPeakOutputReverse(-.3);
-        pivotPID = new PIDController(.02, 0, 0);
+        pivotPID = new PIDController(.007, 0, 0);
     }
 
     /**
@@ -124,7 +124,7 @@ public class Shooter {
      * @param speed the percent output of the speed
      */
     public void setFlywheelPercentSpeed(double speed) {
-        if (isRunning) flywheel.set(speed);
+        if (!isRunning) flywheel.set(speed);
     }
 
     /**
@@ -133,7 +133,7 @@ public class Shooter {
      * @return a double of the setpoint
      */
     public double getVelocityFromDistance(double dist) {
-        return 0;
+        return -0.008 * Math.pow(dist, 2) + 7.223 * dist + 1686;
     }
 
     /**
@@ -206,7 +206,7 @@ public class Shooter {
      */
     public double getPivotPositionFromDistance(double dist) {
         if (dist < 40 || dist > 450) return getPivotPosition(); // probably not valid, just use previous position
-        return -.0079 * Math.pow(dist, 2) + 4.15 * dist + 510;  // TODO this entire method needs to be updated after the 90 degree gearbox got ripped out
+        return -.006 * Math.pow(dist, 2) + 4.247 * dist + 294;  // TODO this entire method needs to be updated after the 90 degree gearbox got ripped out
     }
 
     /**
