@@ -13,6 +13,10 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.ControlType;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
+import edu.wpi.first.wpilibj.I2C;
+import edu.wpi.first.wpilibj.util.Color; 
+import com.revrobotics.ColorSensorV3;
+
 import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.controller.PIDController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -34,13 +38,18 @@ public class Shooter {
     double kD = .0034;
     double kF = .000202;    // originally .000173
 
+    private boolean powerCellInShooter = false;         // whether or not a power cell is currently occupying the shooter space, only updated with color sensing method
+    private int powerCellsLeft;
+
     // Define hardware
+    private I2C.Port i2cPort;
     private Spark feeder;
     private TalonSRX pivot;
     private CANSparkMax flywheel; 
     private CANPIDController PID;
     private PIDController pivotPID;
     private CANEncoder encoder;
+    private ColorSensorV3 colourSensor; 
 
     /**
      * Constructs the Shooter class.
@@ -62,6 +71,8 @@ public class Shooter {
         pivot.configPeakOutputForward(.3);
         pivot.configPeakOutputReverse(-.3);
         pivotPID = new PIDController(.007, 0, 0);
+        colourSensor = new ColorSensorV3(i2cPort);
+        powerCellsLeft = 3;
     }
 
     /**
@@ -229,5 +240,26 @@ public class Shooter {
      */
     public void killPivot() {
         pivot.set(ControlMode.PercentOutput, 0);
+    }
+
+    private void sensePowerCells() {
+        Color detectedColour = colourSensor.getColor();
+        boolean previousCellOccupancy = powerCellInShooter;
+
+        if (detectedColour.blue >= 0.11 && detectedColour.green >= .45 && detectedColour.green <= 0.55 && detectedColour.red >= 0.28 && detectedColour.red <= .34) {
+            powerCellInShooter = true;
+        }
+        if (previousCellOccupancy && !powerCellInShooter){
+            powerCellsLeft --;
+        }
+        SmartDashboard.putNumber("PowerCells", powerCellsLeft);
+    }
+    
+    public void setPowerCellsLeft(int powerCellsGained) {
+        powerCellsLeft = powerCellsGained;
+    }
+
+    public int getPowerCellsLeft() {
+        return powerCellsLeft;
     }
 }
