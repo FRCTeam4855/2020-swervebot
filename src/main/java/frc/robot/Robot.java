@@ -41,16 +41,16 @@ public class Robot extends TimedRobot {
 	final double CONTROL_SPEEDREDUCTION_PRECISION = 3.6;		// teleop drivetrain inputs are divided by this number when precision trigger is engaged
 	final double CONTROL_DEADZONE = 0.23;       			    // minimum value before joystick inputs will be considered on the swerves
 	final boolean CONTROL_AUTOFAULT_HANDLE = false;				// whether or not the robot will automatically react to a faulty wheel and flip to tank drive
-	final static double LIMELIGHT_MAXTOLERANCE = 1.5;			// the maximum +/- on limelight x to stop attempting to move the robot
+	final static double LIMELIGHT_MAXTOLERANCE = 2; 			// the maximum +/- on limelight x to stop attempting to move the robot
 	boolean INTERFACE_SINGLEDRIVER = false;  		  			// whether or not to enable or disable single driver input (press START to switch between controllers)
 	
 	// OTHER CONSTANTS
 	final static double ROBOT_WIDTH = 25;
 	final static double ROBOT_LENGTH = 24.75;
 	final static double ROBOT_R = Math.sqrt(Math.pow(ROBOT_LENGTH, 2) + Math.pow(ROBOT_WIDTH, 2));
-	final static double ENC_TO_DEG = 4.588888;		// formerly 1.158333
+	final static double ENC_TO_DEG = 4.6916666;		// formerly 1.158333, then 4.58888 before attempted fix
 	final static double ABS_TO_DEG = 11.244444;
-	final static double ENC_360 = 1652;				// formerly 417 with original Spark-driven swerves
+	final static double ENC_360 = 1689;				// formerly 417 with original Spark-driven swerves
 	final static double IN_TO_ENC = 10.394;
 
 	// BEGINNING VARIABLES
@@ -71,24 +71,27 @@ public class Robot extends TimedRobot {
 	// Various variables
 	boolean aimMode = false;					// whether or not robot is moving shooter pivot
 	boolean aimLobShot = false;					// whether or not robot is shooting from right up against the power port
+	boolean aimLockPivot = false;				// whether or not to lock the pivot in place when shooting through PID but never adjusting it
+	boolean holdingArm = false;					// whether or not robot is automatically lifting up arm to dump balls as they are fed into shooter
 	double aimModePosition = 0;					// the position the robot is attemping to aim the shooter pivot to
 	boolean climberDriverOverride = false;		// driver can hit up control to take control of climber
 	static boolean showDiagnostics = false;		// show more variables to diagnose issues
 
 	// AUTONOMOUS VARIABLES
-	int a_startType = 4;				// correlates to the driver station you are standing behind
+	int a_startType = 1;				// correlates to the driver station you are standing behind
 	char a_autoType = 'a';				// correlates to the routine type
 	boolean a_truncateRoutine = false;	// truncates the routine to a predefined step
+	int a_waitTime = 0;					// waits a prespecified amount of time to start the routine, projected onto dashboard with other controls
   	//=======================================
 	
 	// DEFINING HARDWARE
 	//=======================================
 	// Define swerve wheel classes
 	static Wheel wheel[] = {
-		new Wheel(new TalonSRX(1), new CANSparkMax(6, MotorType.kBrushless), new AnalogInput(2), 2),// front right
-		new Wheel(new TalonSRX(2), new CANSparkMax(7, MotorType.kBrushless), new AnalogInput(3), 3),// front left
-		new Wheel(new TalonSRX(3), new CANSparkMax(8, MotorType.kBrushless), new AnalogInput(1), 0),// back left
-		new Wheel(new TalonSRX(4), new CANSparkMax(9, MotorType.kBrushless), new AnalogInput(0), 1)// back right	
+		new Wheel(new TalonSRX(1), new CANSparkMax(6, MotorType.kBrushless), new AnalogInput(2), 0),// front right
+		new Wheel(new TalonSRX(2), new CANSparkMax(7, MotorType.kBrushless), new AnalogInput(3), 1),// front left
+		new Wheel(new TalonSRX(3), new CANSparkMax(8, MotorType.kBrushless), new AnalogInput(1), 2),// back left
+		new Wheel(new TalonSRX(4), new CANSparkMax(9, MotorType.kBrushless), new AnalogInput(0), 3)// back right	
 	};
 	
 	// Xbox controllers
@@ -188,7 +191,7 @@ public class Robot extends TimedRobot {
 
 				if (reverseRotate) jRcw = -jRcw;
 				boolean turnWheels;					// whether or not the wheels should attempt to spin to a new angle
-				if ((jFwd != 0 && jStr != 0 && jRcw != 0)) turnWheels = false; else turnWheels = true;
+				// if ((jFwd != 0 && jStr != 0 && jRcw != 0)) turnWheels = false; else turnWheels = true;
 				
 				// Pull from override information
 				if (overrideFWD != 0) {
@@ -203,8 +206,8 @@ public class Robot extends TimedRobot {
 					jRcw = overrideRCW;
 					turnWheels = true;
 				}
-				
-				if (turnWheels && !controlDriver.getRawButton(Utility.BUTTON_X)) swerve(jFwd, jStr, jRcw, driverOriented);
+				//System.out.println("jRcw " + jRcw);
+				if (!controlDriver.getRawButton(Utility.BUTTON_X)) swerve(jFwd, jStr, jRcw, driverOriented);
 			}
 		} else {
 			// Emergency tank drive
@@ -230,6 +233,7 @@ public class Robot extends TimedRobot {
 	 */
 	public static void swerve(double FWD, double STR, double RCW, boolean driverOriented) {
 		// Local method variables
+		//System.out.println("RCW  " + RCW);
 		double a, b, c, d, max, temp, rads; 
 		double encoderSetpointA, encoderSetpointB, encoderSetpointC, encoderSetpointD;
 		double wheelSpeed1, wheelSpeed2, wheelSpeed3, wheelSpeed4;
@@ -276,10 +280,10 @@ public class Robot extends TimedRobot {
 		
 		// Tween wheel speeds
 		if (wheelSpeedTimer.get() > 0.1) {
-			if (wheelSpeed1 - wheelSpeedActual1 > 0.1) {wheelSpeedActual1 += 0.1;} else if (wheelSpeed1 - wheelSpeedActual1 < -0.1) {wheelSpeedActual1 -= 0.1;} else {wheelSpeedActual1 = wheelSpeed1;}
-			if (wheelSpeed2 - wheelSpeedActual2 > 0.1) {wheelSpeedActual2 += 0.1;} else if (wheelSpeed2 - wheelSpeedActual2 < -0.1) {wheelSpeedActual2 -= 0.1;} else {wheelSpeedActual2 = wheelSpeed2;}
-			if (wheelSpeed3 - wheelSpeedActual3 > 0.1) {wheelSpeedActual3 += 0.1;} else if (wheelSpeed3 - wheelSpeedActual3 < -0.1) {wheelSpeedActual3 -= 0.1;} else {wheelSpeedActual3 = wheelSpeed3;}
-			if (wheelSpeed4 - wheelSpeedActual4 > 0.1) {wheelSpeedActual4 += 0.1;} else if (wheelSpeed4 - wheelSpeedActual4 < -0.1) {wheelSpeedActual4 -= 0.1;} else {wheelSpeedActual4 = wheelSpeed4;}
+			if (wheelSpeed1 - wheelSpeedActual1 > 0.15) {wheelSpeedActual1 += 0.15;} else if (wheelSpeed1 - wheelSpeedActual1 < -0.15) {wheelSpeedActual1 -= 0.15;} else {wheelSpeedActual1 = wheelSpeed1;}
+			if (wheelSpeed2 - wheelSpeedActual2 > 0.15) {wheelSpeedActual2 += 0.15;} else if (wheelSpeed2 - wheelSpeedActual2 < -0.15) {wheelSpeedActual2 -= 0.15;} else {wheelSpeedActual2 = wheelSpeed2;}
+			if (wheelSpeed3 - wheelSpeedActual3 > 0.15) {wheelSpeedActual3 += 0.15;} else if (wheelSpeed3 - wheelSpeedActual3 < -0.15) {wheelSpeedActual3 -= 0.15;} else {wheelSpeedActual3 = wheelSpeed3;}
+			if (wheelSpeed4 - wheelSpeedActual4 > 0.15) {wheelSpeedActual4 += 0.15;} else if (wheelSpeed4 - wheelSpeedActual4 < -0.15) {wheelSpeedActual4 -= 0.15;} else {wheelSpeedActual4 = wheelSpeed4;}
 			wheelSpeedTimer.reset();
 		}
 		
@@ -340,30 +344,34 @@ public class Robot extends TimedRobot {
 
 		// Feed action queues, they hunger for your command
 
-		aqHandler.getQueue(QUEUE_ANGLE).queueFeed(ActionQueue.Command.TURN_TO_ANGLE, 0, 2, false, 0, 0, 0);
+		aqHandler.getQueue(QUEUE_ANGLE).queueFeed(ActionQueue.Command.TURN_TO_ANGLE, 0, 2, false, 112.5, 0, 0);	// automatically turn to the angle of the bar
 
 		aqHandler.getQueue(QUEUE_DRIVESTRAIGHT).queueFeed(ActionQueue.Command.DRIVE_STRAIGHT, 0, 3, false, .3, 0, 0);
 
 		aqHandler.getQueue(QUEUE_LIMELIGHTANGLE).queueFeed(ActionQueue.Command.ANGLE_TO_LIMELIGHT_X, 0, 1, false, 0, 0, 0);
 
 		// Autonomous Routine 1A - Basic clip release
-		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.INTAKE_PIVOT, 0, 1.9, true, .35, 0, 0);		// bring down intake pivot
-		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.RUN_FLYWHEEL, 0, 3.7, true, 3320, 0, 0);		// turn on flywheel
-		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.WAIT_FOR_SENSOR, 1, 1.01, false, 1, 0, 0);	// wait to reach speed
-		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.FEED_BALL, 1.1, 3.5, true, 0, 0, 0);			// feed balls into shooter
-		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.SWERVE, 4, 7, true, -.18, 0, 0);				// back up
-		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.SWERVE, 7, 8, true, 0, 0, 0);					// stop driving
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.INTAKE_PIVOT, 0, 1.25, true, .5, 0, 0);		// bring down intake pivot
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.RUN_INTAKE_WHEELS, 1, 3, true, 1, 0, 0);		// fling ball into robot
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.RUN_FLYWHEEL, .7, 3.9, true, 2990, 0, 0);		// turn on flywheel
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.SHOOTER_PIVOT, 0, 5, true, 740, 0, 0);		// shooter pivot to correct position
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.WAIT_FOR_SENSOR, 1.1, 1.2, false, 1, 0, 0);	// wait to reach speed
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.FEED_BALL, 1.5, 4.1, true, 0, 0, 0);			// feed balls into shooter
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.SWERVE, 7, 8, true, -.18, 0, 0);				// back up
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1A).queueFeed(ActionQueue.Command.SWERVE, 8.1, 9, true, 0, 0, 0);				// stop driving
 
 		// Autonomous Routine 1B - Start in front of station 1, shoot, pick up balls directly behind machine and shoot again
-		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.INTAKE_PIVOT, 0, 1.9, true, .35, 0, 0);		// bring down intake pivot
-		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.RUN_FLYWHEEL, 0, 3.7, true, 3320, 0, 0);		// turn on flywheel
-		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.WAIT_FOR_SENSOR, 1, 1.01, false, 1, 0, 0);	// wait to reach speed
-		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.FEED_BALL, 1.1, 3.5, true, 0, 0, 0);			// feed balls into shooter
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.INTAKE_PIVOT, 0, 1.25, true, .5, 0, 0);		// bring down intake pivot
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.RUN_INTAKE_WHEELS, 1, 3, true, 1, 0, 0);
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.RUN_FLYWHEEL, .7, 3.9, true, 0, 1, 0);		// turn on flywheel
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.WAIT_FOR_SENSOR, 1.1, 1.2, false, 1, 0, 0);	// wait to reach speed
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.FEED_BALL, 1.5, 4.1, true, 0, 0, 0);			// feed balls into shooter
 		// At this point, the first clip has been unloaded
 		// TODO *something something use color sensor to count balls*
-		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.DRIVE_STRAIGHT, 3.8, 7, true, -.3, 0, 180);	// turn around and drive
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.SWERVE, 3.8, 7, true, 0.22, 0, 0);	// turn around and drive
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.RUN_INTAKE_WHEELS, 4.2, 7, true, 1, 0, 0);	// intake balls
 		// TODO *something something check drive encoders for distance*
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.SWERVE, 7, 7.05, true, 0, 0, 0);
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.TURN_TO_ANGLE, 7, 9, true, 0, 0, 0);			// turn robot around
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.ANGLE_TO_LIMELIGHT_X, 8.6, 9, true, 1, 0, 0);	// angle to target
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.RUN_FLYWHEEL, 7, 12, true, 3320, 0, 0);		// turn on flywheel
@@ -371,12 +379,15 @@ public class Robot extends TimedRobot {
 		aqHandler.getQueue(QUEUE_AUTONOMOUS_1B).queueFeed(ActionQueue.Command.FEED_BALL, 8, 11.5, true, 0, 0, 0);			// feed balls into shooter
 
 		// Autonomous Routine 4A - Autocross from any location
-		aqHandler.getQueue(QUEUE_AUTONOMOUS_4A).queueFeed(ActionQueue.Command.DRIVE_STRAIGHT, 1, 3, false, -.2, 0, 0);
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_4A).queueFeed(ActionQueue.Command.DRIVE_STRAIGHT, 1, 2.4, false, -.2, 0, 0);
+		//aqHandler.getQueue(QUEUE_AUTONOMOUS_4A).queueFeed(ActionQueue.Command.WAIT_FOR_SENSOR, 1.01, 1.02, false, 3, 3000, 10);
+		aqHandler.getQueue(QUEUE_AUTONOMOUS_4A).queueFeed(ActionQueue.Command.SWERVE, 2.5, 15, false, 0, 0, 0);
 
 		// Put default auto chooser values to the dashboard
 		SmartDashboard.putNumber("Auto: Station #", a_startType);
 		SmartDashboard.putString("Auto: Routine Type", String.valueOf(a_autoType));
 		SmartDashboard.putBoolean("Auto: Truncate", a_truncateRoutine);
+		SmartDashboard.putNumber("Auto: Wait Time", a_waitTime);
 	}
 	
 	/**
@@ -387,7 +398,6 @@ public class Robot extends TimedRobot {
 		Utility.cleanSlateAllWheels(wheel);
 		Utility.powerAllWheels(false, wheel);	
 		Utility.setAllPIDSetpoints(0, wheel);
-		shooter.resetPivotPosition();
 		shooter.killFlywheel();
 		shooter.killFeeder();
 		aqHandler.killQueues();
@@ -397,13 +407,14 @@ public class Robot extends TimedRobot {
 	@Override
 	public void disabledPeriodic() {
 		// Display autonomous controls
-		SmartDashboard.putNumber("Auto: Station #", a_startType);
+		/*SmartDashboard.putNumber("Auto: Station #", a_startType);
 		SmartDashboard.putString("Auto: Routine Type", String.valueOf(a_autoType));
-		SmartDashboard.putBoolean("Auto: Truncate", a_truncateRoutine);
+		SmartDashboard.putBoolean("Auto: Truncate", a_truncateRoutine);*/
 
-		a_startType = (int) SmartDashboard.getNumber("Auto: Station #", 4);
+		a_startType = (int) SmartDashboard.getNumber("Auto: Station #", 1);
 		a_autoType = SmartDashboard.getString("Auto: Routine Type", "a").toLowerCase().charAt(0);
 		a_truncateRoutine = SmartDashboard.getBoolean("Auto: Truncate", a_truncateRoutine);
+		a_waitTime = (int) SmartDashboard.getNumber("Auto: Wait Time", 0);
 
 		// Keep Limelight lamps turned off
 		limelight.turnOffLamp();
@@ -469,6 +480,8 @@ public class Robot extends TimedRobot {
 				break;
 
 		}
+
+		if (a_waitTime > 0) aqHandler.getQueue(routineNumber).queueFeed(ActionQueue.Command.WAIT_FOR_SENSOR, 0, 0, false, 0, a_waitTime, 0);
 		aqHandler.getQueue(routineNumber).queueStart();
 	}
 
@@ -478,7 +491,8 @@ public class Robot extends TimedRobot {
 	@Override
 	public void autonomousPeriodic() {
 		aqHandler.runQueues();
-		leds.setLEDs(Blinkin.C2_STROBE);
+		SmartDashboard.putNumber("Shooter pivot angle", shooter.getPivotPosition());
+		leds.setLEDs(Blinkin.FIRE_LARGE);
 	}
 	
 	/**
@@ -494,6 +508,8 @@ public class Robot extends TimedRobot {
 			gyro.reset();
 			driverOriented = true;
 			emergencyTank = false;
+		} else {
+			Utility.powerAllWheels(true, wheel);
 		}
 	}
 	
@@ -503,7 +519,8 @@ public class Robot extends TimedRobot {
 	@Override
 	public void teleopPeriodic() {
 		// Begin DRIVER CONTROL
-
+		//wheel[0].process();
+		
 		if (INTERFACE_SINGLEDRIVER == false || (INTERFACE_SINGLEDRIVER == true && singleDriverController == 0)) {
 			controlWorking = controlDriver;
 			
@@ -553,6 +570,10 @@ public class Robot extends TimedRobot {
 				if (driverOriented == true) driverOriented = false; else driverOriented = true;
 			}
 
+			// TODO remove this
+			// Run angle routine (TEST)
+			if (controlWorking.getRawButtonPressed(Utility.BUTTON_START)) aqHandler.getQueue(QUEUE_ANGLE).queueStart();
+
 			// Emergency wheel adjustment mode
 			if (controlWorking.getRawButtonPressed(Utility.BUTTON_SELECT) && controlWorking.getRawButtonPressed(Utility.BUTTON_START)) {
 				if (emergencyReadjust) {
@@ -579,7 +600,7 @@ public class Robot extends TimedRobot {
 
 			// Run the flyheel at the necessary speed to shoot while against the tower and aim the shooter
 			if (controlWorking.getRawButton(Utility.BUTTON_Y)) {
-				shooter.setFlywheelSpeed(2700);
+				shooter.setFlywheelSpeed(2400);
 				shooter.setPivotPosition(130);
 				aimMode = true;
 				aimLobShot = true;
@@ -600,11 +621,21 @@ public class Robot extends TimedRobot {
 				shooter.setFlywheelSpeed(3320);
 			}
 
+			// Run the flywheel to shoot optimally in the trench run
+			if (controlWorking.getRawButton(Utility.BUTTON_RB)) {
+				shooter.setFlywheelSpeed(3265);	// default speed position
+				shooter.setPivotPosition(800);
+				aimMode = true;
+				aimLockPivot = true;
+				aimModePosition = 800; // default starting position
+			}
+
 			// Kill the shooter
 			if (controlWorking.getRawButtonPressed(Utility.BUTTON_B)) {
 				shooter.killFlywheel();
 				aimMode = false;
 				aimLobShot = false;
+				aimLockPivot = false;
 			}
 
 			// Execute the logic to continue running the flywheel
@@ -621,7 +652,7 @@ public class Robot extends TimedRobot {
 					shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint() + (int) (controlWorking.getRawAxis(Utility.AXIS_RSTICKX) * 6));
 				}
 				// Auto-aiming
-				if (aimMode && !aimLobShot) {
+				if (aimMode && !aimLobShot && !aimLockPivot) {
 					shooter.setFlywheelSpeed(shooter.getVelocityFromDistance(lidar.getDistance(Lidar.Unit.INCHES)));
 					double setAim = shooter.getPivotPositionFromDistance(lidar.getDistance(Lidar.Unit.INCHES));
 					aimModePosition = setAim;
@@ -630,9 +661,9 @@ public class Robot extends TimedRobot {
 				// Manually set power to forward or backward of flywheel while it isn't in setpoint mode
 				SmartDashboard.putBoolean("Ready to fire", false);
 				if (controlWorking.getPOV() == 90) 
-					shooter.setFlywheelPercentSpeed(-.3);
+					shooter.setFlywheelPercentSpeed(-.5);
 				else if (controlWorking.getPOV() == 270) 
-					shooter.setFlywheelPercentSpeed(.3);
+					shooter.setFlywheelPercentSpeed(.5);
 				else shooter.setFlywheelPercentSpeed(0);
 			}
 
@@ -640,6 +671,7 @@ public class Robot extends TimedRobot {
 			if (Math.abs(controlWorking.getRawAxis(Utility.AXIS_RSTICKY)) > .1) {
 				shooter.setPivot(controlWorking.getRawAxis(Utility.AXIS_RSTICKY) * .25);
 				aimMode = false;
+				aimLockPivot = false;
 			} else shooter.killPivot();
 
 			// Run the feeder
@@ -659,11 +691,17 @@ public class Robot extends TimedRobot {
 			// Run the intake pivot
 			if (Math.abs(controlWorking.getRawAxis(Utility.AXIS_LSTICKY)) > .1) {
 				intake.setPivot(controlWorking.getRawAxis(Utility.AXIS_LSTICKY) * .5);
+				//intake.setPivotPosition(400);
 			} else if (!aimMode) intake.setPivot(0);
 
 			// Zero out the shooter pivot encoder
 			if (controlWorking.getRawButtonPressed(Utility.BUTTON_START)) {
 				shooter.resetPivotPosition();
+			}
+
+			// Zero out the intake pivot encoder
+			if (controlWorking.getRawButtonPressed(Utility.BUTTON_SELECT)) {
+				intake.resetPivotPosition();
 			}
 
 			// Run climber motor
@@ -676,7 +714,7 @@ public class Robot extends TimedRobot {
 			}
 
 			// Aim down pivot if aimMode is active
-			if (aimMode) {
+			if (aimMode || aimLockPivot) {
 				shooter.setPivotPosition(aimModePosition);
 			}
 		}
@@ -715,6 +753,9 @@ public class Robot extends TimedRobot {
 		SmartDashboard.putNumber("Lidar Dist", lidar.getDistance(Lidar.Unit.INCHES));
 		SmartDashboard.putNumber("Shooter pivot angle", shooter.getPivotPosition());
 
+		shooter.sensePowerCells();
+		SmartDashboard.putNumber("Power cells", shooter.getPowerCellsLeft());
+		
 		// End UNIVERSAL FUNCTIONS
 	}
 
@@ -729,7 +770,9 @@ public class Robot extends TimedRobot {
 	
 	@Override
 	public void testPeriodic() {
+		//wheel[0].process();
+		leds.setLEDs(Blinkin.WHITE);
 		readjust();
-		SmartDashboard.putNumber("Lidar Dist", lidar.getDistance(Lidar.Unit.INCHES));
+		//SmartDashboard.putNumber("Lidar Dist", lidar.getDistance(Lidar.Unit.INCHES));
 	}
 }

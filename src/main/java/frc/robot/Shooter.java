@@ -28,7 +28,7 @@ public class Shooter {
     private int speedUpTime = -1;               // the amount of program ticks remaining for the shooter to be fed by percentage input
     private boolean isRunning = false;          // whether or not the flywheel is running
     private final int MAX_SPEEDUP_TICKS = 50;   // the flywheel will have 50 ticks to increase the speed to roughly where it needs to be via percent output
-    private final int ACCEPTABLE_ERROR = 50;    // the acceptable error to reasonably state that the shooter is ready to shoot
+    private final int ACCEPTABLE_ERROR = 70;    // the acceptable error to reasonably state that the shooter is ready to shoot
     private enum Phase {
         OFF, SPEED_UP, LOCK_IN
     }
@@ -39,17 +39,18 @@ public class Shooter {
     double kF = .000202;    // originally .000173
 
     private boolean powerCellInShooter = false;         // whether or not a power cell is currently occupying the shooter space, only updated with color sensing method
-    private int powerCellsLeft;
+    private double proximityValue = 0;                  // the proximity value of the proximity sensor
+    private double ticksBetweenBalls = -1;              // how often balls are allowed to pass through balls
+    private int powerCellsLeft;                         // the number of balls remaining in the reserve
 
     // Define hardware
-    private I2C.Port i2cPort;
     private Spark feeder;
     private TalonSRX pivot;
     private CANSparkMax flywheel; 
     private CANPIDController PID;
     private PIDController pivotPID;
     private CANEncoder encoder;
-    private ColorSensorV3 colourSensor; 
+    public ColorSensorV3 colourSensor; 
 
     /**
      * Constructs the Shooter class.
@@ -71,7 +72,7 @@ public class Shooter {
         pivot.configPeakOutputForward(.3);
         pivot.configPeakOutputReverse(-.3);
         pivotPID = new PIDController(.007, 0, 0);
-        colourSensor = new ColorSensorV3(i2cPort);
+        colourSensor = new ColorSensorV3(I2C.Port.kOnboard);
         powerCellsLeft = 3;
     }
 
@@ -104,7 +105,7 @@ public class Shooter {
         }
         // TODO getting consistent error messages: [CAN SPARK MAX] timed out while waiting for Periodic Status 1, Periodic Status 1
         if (speedUpTime > -1 && currentPhase == Phase.SPEED_UP) {
-            double percentOutput = -((setpoint / 5100) + .015); // formerly (setpoint / 5100) - .025
+            double percentOutput = MathUtil.clamp(-((setpoint / 5100) + .015), 0, 1); // formerly (setpoint / 5100) - .025
             flywheel.set(percentOutput);
             speedUpTime --;
             if (speedUpTime <= 0) {
@@ -144,6 +145,7 @@ public class Shooter {
      * @return a double of the setpoint
      */
     public double getVelocityFromDistance(double dist) {
+        if (dist < 90 || dist > 450) return getFlywheelVelocity(); // probably not valid, just use previous position
         return -0.008 * Math.pow(dist, 2) + 7.223 * dist + 1686;
     }
 
@@ -217,7 +219,11 @@ public class Shooter {
      */
     public double getPivotPositionFromDistance(double dist) {
         if (dist < 90 || dist > 450) return getPivotPosition(); // probably not valid, just use previous position
-        return -.006 * Math.pow(dist, 2) + 4.247 * dist + 294;
+        double adjust = 40;
+        if (dist < 200) adjust = -75;
+        //return -.006 * Math.pow(dist, 2) + 4.247 * dist + 294;    old
+        //return -.007 * Math.pow(dist, 2) + 4.3 * dist + 245;
+        return -.006 * Math.pow(dist, 2) + 4 * dist + 220 + adjust;
     }
 
     /**
@@ -242,17 +248,28 @@ public class Shooter {
         pivot.set(ControlMode.PercentOutput, 0);
     }
 
-    private void sensePowerCells() {
-        Color detectedColour = colourSensor.getColor();
-        boolean previousCellOccupancy = powerCellInShooter;
+    public void sensePowerCells() {
+        //Color detectedColour = colourSensor.getColor();
 
-        if (detectedColour.blue >= 0.11 && detectedColour.green >= .45 && detectedColour.green <= 0.55 && detectedColour.red >= 0.28 && detectedColour.red <= .34) {
+        //boolean previousCellOccupancy = powerCellInShooter;
+
+        /*if (detectedColour.blue >= 0.11 && detectedColour.green >= .45 && detectedColour.green <= 0.55 && detectedColour.red >= 0.28 && detectedColour.red <= .34) {
             powerCellInShooter = true;
         }
         if (previousCellOccupancy && !powerCellInShooter){
             powerCellsLeft --;
+        }*/
+
+        proximityValue = colourSensor.getProximity();
+        if (proximityValue > 500 && ticksBetweenBalls == -1) {
+            powerCellInShooter = true;
         }
-        SmartDashboard.putNumber("PowerCells", powerCellsLeft);
+        if (proximityValue < 500 && ticksBetweenBalls == -1 && powerCellInShooter) {
+            powerCellsLeft --;
+            powerCellInShooter = false;
+            ticksBetweenBalls = 24;
+        }
+        if (ticksBetweenBalls < -1) ticksBetweenBalls --;
     }
     
     public void setPowerCellsLeft(int powerCellsGained) {

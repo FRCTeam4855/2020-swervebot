@@ -19,7 +19,7 @@ public class ActionQueueHandler {
 	private static double elapsedTime = -1;													// for use with the WAIT_FOR_SENSOR timer command
 	private static double startingTime = -1;												// for use with the WAIT_FOR_SENSOR timer command
 	private static PIDController PIDRotate = new PIDController(.0077, 0, 0.0007);			// for use with the ROTATE_TO_ANGLE action command
-	private static PIDController PIDLimelightXRot = new PIDController(.008, 0.0009/*.00022*/, 0.0034);	// for use with the ANGLE_TO_LIMELIGHT_X action command
+	private static PIDController PIDLimelightXRot = new PIDController(.007, 0.0009/*.00022*/, 0.0044);	// for use with the ANGLE_TO_LIMELIGHT_X action command
 
 	/**
 	 * Constructs an ActionQueueHandler. It is responsible for managing the running of every
@@ -177,7 +177,6 @@ public class ActionQueueHandler {
 	public static void queueRun_Flywheel(double timeEnd, double param1, double param2) {
 		if (param2 == 0) {
 			Robot.shooter.setFlywheelSpeed(param1);
-			//Robot.shooter.setPivotPosition(1000);	// former sweet spot position
 		} else {
 			Robot.shooter.setFlywheelSpeed(Robot.shooter.getVelocityFromDistance(Robot.lidar.getDistance(Lidar.Unit.INCHES)));
 			Robot.shooter.setPivotPosition(Robot.shooter.getPivotPositionFromDistance(Robot.lidar.getDistance(Lidar.Unit.INCHES)));
@@ -214,9 +213,10 @@ public class ActionQueueHandler {
 	}
 
 	/**
-	 * The queue action to run the pivot with percentage control.
+	 * The queue action to run the pivot.
 	 * @param timeEnd the designated time for the command to end
 	 * @param param1 the first parameter, the percent speed to set the motor to
+	 * @param param2 the second parameter, 0 for percentage and 1 for position
 	 */
 	public static void queueIntake_Pivot(double timeEnd, double param1) {
 		Robot.intake.setPivot(param1);

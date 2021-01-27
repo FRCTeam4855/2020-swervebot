@@ -7,11 +7,14 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Spark;
+import edu.wpi.first.wpilibj.controller.PIDController;
+import edu.wpi.first.wpiutil.math.MathUtil;
 
 public class Intake {
     private Spark pivot;
     private Spark wheels;
     private Encoder encoder;
+    private PIDController PID;
     
     /**
      * Constructs an instance of Intake. It consists of a pivot arm and intake wheels, both driven by Spark motor controllers.
@@ -22,6 +25,7 @@ public class Intake {
         pivot = new Spark(pivotPort);
         wheels = new Spark(wheelsPort);
         encoder = new Encoder(encPort1, encPort2, encPort3);
+        PID = new PIDController(.09, 0, 0);
     }
 
     /**
@@ -67,6 +71,16 @@ public class Intake {
      * @return encoder position
      */
     public double getPivotPosition() {
-        return encoder.get();
+        return -encoder.get();
+    }
+
+    public void resetPivotPosition() {
+        encoder.reset();
+    }
+
+    public void setPivotPosition(double setpoint) {
+        double calc = PID.calculate(getPivotPosition(), setpoint);
+        calc = MathUtil.clamp(calc, -.3, .3);
+        pivot.set(calc);
     }
 }

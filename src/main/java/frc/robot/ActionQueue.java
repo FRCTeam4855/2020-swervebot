@@ -91,6 +91,7 @@ public class ActionQueue {
 			queueStartTime = System.nanoTime();
 			queueElapsedTime = 0;
 			queueTotalHangTime = 0;
+			queueLastNanoTime = 0;
 			resetQueueDeadMotorFlags();
 		} else queueStop();
 	}
@@ -106,6 +107,7 @@ public class ActionQueue {
 			}
 		}
 		queueIsRunning = false;
+		queueTotalHangTime = 0;
 		queueElapsedTime = 0;
 		if (queueUsesSwerveOverrides) {
 			Robot.overrideFWD = 0;

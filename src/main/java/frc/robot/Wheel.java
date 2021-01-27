@@ -38,9 +38,13 @@ public class Wheel {
 	private int faultySetpointTimer = -1;											// counts how long a disparity has existed between the PID setpoint and the encoder 
 	private boolean lockAtZero = false;												// whether the wheels should be locked at zero using the analog input or not
 
-	private double kP = 0.0089;		// formerly .0071
-	private double kI = 0.00000008;	// formerly .00008
-	private double kD = 0.0001;		// formerly .000056
+	private double kP = 0.0089 / 4;		// formerly .0089
+	private double kI = 0;	// formerly .00008
+	private double kD = 0.0001 / 4;	// formerly .0001
+
+	/*private double kP = 0.035 / 4;		// formerly .0089
+	private double kI = 0.0;	// formerly .00008
+	private double kD = 0.01 / 4;*/
 
 	/**
 	 * Creates a new wheel instance. There should only be four of these
@@ -120,7 +124,7 @@ public class Wheel {
 	public void lockFlip(boolean f) {
 		lockFlip = f;
 	}
-	// enable.hotdogstand < 0 ((( ><  Cody did this- cody
+
 	/**
 	 * Resets the calculation properties of the wheel. Also tells the wheel that it has not performed any flips
 	 */
@@ -313,8 +317,8 @@ public class Wheel {
 
 		// Turn the wheels based on encoder input
 		if (on && !settingToZero) {
-			double set = setpoint / 4;
-			double calc = PID.calculate(getEncoderPosition() / 4, set);
+			double set = setpoint;
+			double calc = PID.calculate(getEncoderPosition(), set);
 			calc = MathUtil.clamp(calc, -1, 1);
 			motorAngle.set(ControlMode.PercentOutput, calc);
 		} else if (!settingToZero) {
@@ -323,8 +327,8 @@ public class Wheel {
 		}
 
 		
-		/*
-		kP = SmartDashboard.getNumber("P", kP);
+		
+		/*kP = SmartDashboard.getNumber("P", kP);
 		kI = SmartDashboard.getNumber("I", kI);
 		kD = SmartDashboard.getNumber("D", kD);
 
