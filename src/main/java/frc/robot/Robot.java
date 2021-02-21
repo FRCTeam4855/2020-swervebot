@@ -721,8 +721,8 @@ public class Robot extends TimedRobot {
 			}
 		}
 
-		// End OPERATOR DRIVING
-		// Begin OPERATOR CONTROLLS: Interstellar Accuracy Challenge 
+		
+		// Begin OPERATOR CONTROLS: Interstellar Accuracy Challenge 
 
 		// Toggle white "READY" light
 		if (controlWorking.getRawButton(Utility.BUTTON_LB)) {
@@ -762,6 +762,7 @@ public class Robot extends TimedRobot {
 			leds.setLEDs(Blinkin.RED);
 		}
 
+		// End OPERATOR DRIVING
 		// Begin UNIVERSAL FUNCTIONS
 
 		// Toggle drive mode if single driver interface is active
@@ -788,7 +789,8 @@ public class Robot extends TimedRobot {
 
 		SmartDashboard.putNumber("Intake pivot angle", intake.getPivotPosition()); // temporary for testing
 
-		SmartDashboard.putNumber("YawAxis", gyro.getYaw());
+		SmartDashboard.putNumber("YawAxis", gyro.getYaw()); 
+		// add a potentional "pitch" display for a robotOrieted-relative  
 		SmartDashboard.putBoolean("DriverOriented", driverOriented);
 		SmartDashboard.putNumber("Flywheel Velocity", shooter.getFlywheelVelocity());
 		SmartDashboard.putNumber("Flywheel Setpoint", shooter.getFlywheelSetpoint());
