@@ -13,9 +13,9 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.ControlType;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
-import edu.wpi.first.wpilibj.I2C;
-import edu.wpi.first.wpilibj.util.Color; 
-import com.revrobotics.ColorSensorV3;
+//import edu.wpi.first.wpilibj.I2C;
+//import edu.wpi.first.wpilibj.util.Color; 
+//import com.revrobotics.ColorSensorV3;
 
 import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.controller.PIDController;
@@ -38,10 +38,10 @@ public class Shooter {
     double kD = .0034;
     double kF = .000202;    // originally .000173
 
-    private boolean powerCellInShooter = false;         // whether or not a power cell is currently occupying the shooter space, only updated with color sensing method
-    private double proximityValue = 0;                  // the proximity value of the proximity sensor
-    private double ticksBetweenBalls = -1;              // how often balls are allowed to pass through balls
-    private int powerCellsLeft;                         // the number of balls remaining in the reserve
+    //private boolean powerCellInShooter = false;         // whether or not a power cell is currently occupying the shooter space, only updated with color sensing method
+    //private double proximityValue = 0;                  // the proximity value of the proximity sensor
+    //private double ticksBetweenBalls = -1;              // how often balls are allowed to pass through balls
+    //private int powerCellsLeft;                         // the number of balls remaining in the reserve
 
     // Define hardware
     private Spark feeder;
@@ -50,7 +50,7 @@ public class Shooter {
     private CANPIDController PID;
     private PIDController pivotPID;
     private CANEncoder encoder;
-    public ColorSensorV3 colourSensor; 
+    //public ColorSensorV3 colourSensor; 
 
     /**
      * Constructs the Shooter class.
@@ -72,8 +72,8 @@ public class Shooter {
         pivot.configPeakOutputForward(.3);
         pivot.configPeakOutputReverse(-.3);
         pivotPID = new PIDController(.007, 0, 0);
-        colourSensor = new ColorSensorV3(I2C.Port.kOnboard);
-        powerCellsLeft = 3;
+        //colourSensor = new ColorSensorV3(I2C.Port.kOnboard);
+        //powerCellsLeft = 3;
     }
 
     /**
@@ -260,7 +260,7 @@ public class Shooter {
             powerCellsLeft --;
         }*/
 
-        proximityValue = colourSensor.getProximity();
+        /*proximityValue = colourSensor.getProximity();
         if (proximityValue > 500 && ticksBetweenBalls == -1) {
             powerCellInShooter = true;
         }
@@ -277,6 +277,6 @@ public class Shooter {
     }
 
     public int getPowerCellsLeft() {
-        return powerCellsLeft;
+        return powerCellsLeft; */
     }
 }
