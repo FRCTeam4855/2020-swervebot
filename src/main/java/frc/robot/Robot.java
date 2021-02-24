@@ -10,6 +10,8 @@
 
 // Swerve-bot code: Robot
 
+//Github test-push 1
+
 package frc.robot;
 // package edu.christmas.2012; (DO NOT DELETE; IMPORTANT)
 
@@ -767,6 +769,47 @@ public class Robot extends TimedRobot {
 			}
 		}
 
+		
+		// Begin OPERATOR CONTROLS: Interstellar Accuracy Challenge 
+
+		// Toggle white "READY" light
+		if (controlWorking.getRawButton(Utility.BUTTON_LB)) {
+			leds.setLEDs(Blinkin.WHITE);
+		} 
+
+		// Run the flywheel to shoot optimally in the GREEN Zone
+		if (controlWorking.getRawButton(Utility.BUTTON_LB) && controlWorking.getRawButton(Utility.BUTTON_A)) {
+			shooter.setFlywheelSpeed(2400);
+			shooter.setPivotPosition(130);
+			aimMode = true;
+			aimModePosition = 130;
+			leds.setLEDs(Blinkin.GREEN);
+		}
+		// Run the flywheel to shoot optimally in the YELLOW Zone
+		if (controlWorking.getRawButton(Utility.BUTTON_LB) && controlWorking.getRawButton(Utility.BUTTON_Y)) {
+			shooter.setFlywheelSpeed(2400);
+			shooter.setPivotPosition(130);
+			aimMode = true;
+			aimModePosition = 130;
+			leds.setLEDs(Blinkin.YELLOW);
+		}
+		// Run the flywheel to shoot optimally in the BLUE Zone
+		if (controlWorking.getRawButton(Utility.BUTTON_LB) && controlWorking.getRawButton(Utility.BUTTON_X)) {
+			shooter.setFlywheelSpeed(2400);
+			shooter.setPivotPosition(130);
+			aimMode = true;
+			aimModePosition = 130;
+			leds.setLEDs(Blinkin.SKY_BLUE);
+		}
+		// Run the flywheel to shoot optimally in the RED Zone
+		if (controlWorking.getRawButton(Utility.BUTTON_LB) && controlWorking.getRawButton(Utility.BUTTON_B)) {
+			shooter.setFlywheelSpeed(2400);
+			shooter.setPivotPosition(130);
+			aimMode = true;
+			aimModePosition = 130;
+			leds.setLEDs(Blinkin.RED);
+		}
+
 		// End OPERATOR DRIVING
 
 				// Begin OPERATOR CONTROLS: Interstellar Accuracy Challenge 
@@ -800,7 +843,8 @@ public class Robot extends TimedRobot {
 
 		SmartDashboard.putNumber("Intake pivot angle", intake.getPivotPosition()); // temporary for testing
 
-		SmartDashboard.putNumber("YawAxis", gyro.getYaw());
+		SmartDashboard.putNumber("YawAxis", gyro.getYaw()); 
+		// add a potentional "pitch" display for a robotOrieted-relative  
 		SmartDashboard.putBoolean("DriverOriented", driverOriented);
 		SmartDashboard.putNumber("Flywheel Velocity", shooter.getFlywheelVelocity());
 		SmartDashboard.putNumber("Flywheel Setpoint", shooter.getFlywheelSetpoint());
