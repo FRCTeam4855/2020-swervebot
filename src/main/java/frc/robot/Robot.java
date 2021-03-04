@@ -602,6 +602,14 @@ public class Robot extends TimedRobot {
 		if (INTERFACE_SINGLEDRIVER == false || (INTERFACE_SINGLEDRIVER == true && singleDriverController == 1)) {
 			if (INTERFACE_SINGLEDRIVER == false) controlWorking = controlOperator; else controlWorking = controlDriver;
 
+				// Toggle white "READY" light
+		if (controlWorking.getRawButton(Utility.BUTTON_LB)) {
+			leds.setLEDs(Blinkin.WHITE);
+			IACbutton = true;
+		} else {
+			IACbutton = false;
+		}
+			
 			// Run the flyheel at the necessary speed to shoot while against the tower and aim the shooter
 			if (controlWorking.getRawButton(Utility.BUTTON_Y) && !IACbutton) {
 				shooter.setFlywheelSpeed(2400);
@@ -612,15 +620,14 @@ public class Robot extends TimedRobot {
 			}
 
 			// Run the flywheel at the necessary speed to shoot from anywhere else and aim the shooter accordingly
-			if (controlWorking.getRawButton(Utility.BUTTON_X) && !IACbutton) {
+			if (controlWorking.getRawButton(Utility.BUTTON_X) && !IACbutton && !controlWorking.getRawButton(Utility.BUTTON_LB)) {
 				shooter.setFlywheelSpeed(3000);	// default speed position
 				shooter.setPivotPosition(1000);
 				aimMode = true;
 				aimLobShot = false;
 				aimModePosition = 1000; // default starting position
-			}
+			} 
 
-			
 
 			// Run the flywheel to shoot optimally in the trench run
 			if (controlWorking.getRawButton(Utility.BUTTON_RB) && !IACbutton) {
@@ -644,21 +651,21 @@ public class Robot extends TimedRobot {
 				shooter.setFlywheelSpeed(3320);
 			}
 
-			// Toggle white "READY" light
-		/*if (controlWorking.getRawButton(Utility.BUTTON_LB)) {
-			leds.setLEDs(Blinkin.WHITE);
-			IACbutton = true;
-		} */
+			
 		
 		// Run the flywheel to shoot optimally in the GREEN Zone
 		if (controlWorking.getRawButton(Utility.BUTTON_LB) && controlWorking.getRawButton(Utility.BUTTON_A)) {
-			shooter.setFlywheelSpeed(2400);
+			shooter.setFlywheelSpeed(2133); //orginal 2400
 			shooter.setPivotPosition(504);
 			aimMode = true;
 			aimModePosition = 504;
 			leds.setLEDs(Blinkin.GREEN);
 			IACbutton = true;
+			aimLobShot = true;
+		} else {
+			IACbutton = false;
 		}
+
 		// Run the flywheel to shoot optimally in the YELLOW Zone
 		if (controlWorking.getRawButton(Utility.BUTTON_LB) && controlWorking.getRawButton(Utility.BUTTON_Y)) {
 			shooter.setFlywheelSpeed(2400);
@@ -668,6 +675,9 @@ public class Robot extends TimedRobot {
 			leds.setLEDs(Blinkin.YELLOW);
 			IACbutton = true;
 		}
+
+
+		
 		// Run the flywheel to shoot optimally in the BLUE Zone
 		if (controlWorking.getRawButton(Utility.BUTTON_LB) && controlWorking.getRawButton(Utility.BUTTON_X)) {
 			shooter.setFlywheelSpeed(2400);
@@ -679,20 +689,22 @@ public class Robot extends TimedRobot {
 		}
 		// Run the flywheel to shoot optimally in the RED Zone
 		if (controlWorking.getRawButton(Utility.BUTTON_LB) && controlWorking.getRawButton(Utility.BUTTON_B)) {
-			shooter.setFlywheelSpeed(3073);
+			shooter.setFlywheelSpeed(3073); //original 3073
 			shooter.setPivotPosition(877);
 			aimMode = true;
 			aimModePosition = 877;
 			leds.setLEDs(Blinkin.RED);
 			IACbutton = true;
-		}
+		}  
 		
 
 			// Execute the logic to continue running the flywheel
 			if (shooter.isRunning()) {
 				if (shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint())) {
 					SmartDashboard.putBoolean("Ready to fire", true);
-					leds.setLEDs(Blinkin.SHOT_BLUE);
+					if (!IACbutton) {
+						leds.setLEDs(Blinkin.SHOT_BLUE); 
+					}
 				} else {
 					SmartDashboard.putBoolean("Ready to fire", false);
 				}
@@ -702,11 +714,11 @@ public class Robot extends TimedRobot {
 					shooter.setFlywheelSpeed(shooter.getFlywheelSetpoint() + (int) (controlWorking.getRawAxis(Utility.AXIS_RSTICKX) * 6));
 				}
 				// Auto-aiming
-				if (aimMode && !aimLobShot && !aimLockPivot) {
+				/*if (aimMode && !aimLobShot && !aimLockPivot && !IACbutton) {
 					shooter.setFlywheelSpeed(shooter.getVelocityFromDistance(lidar.getDistance(Lidar.Unit.INCHES)));
 					double setAim = shooter.getPivotPositionFromDistance(lidar.getDistance(Lidar.Unit.INCHES));
-					aimModePosition = setAim;
-				}
+					aimModePosition = setAim;  //Too in accurate, make more accurate. Disablled for now.
+				} */
 			} else {
 				// Manually set power to forward or backward of flywheel while it isn't in setpoint mode
 				SmartDashboard.putBoolean("Ready to fire", false);
@@ -771,44 +783,6 @@ public class Robot extends TimedRobot {
 
 		
 		// Begin OPERATOR CONTROLS: Interstellar Accuracy Challenge 
-
-		// Toggle white "READY" light
-		if (controlWorking.getRawButton(Utility.BUTTON_LB)) {
-			leds.setLEDs(Blinkin.WHITE);
-		} 
-
-		// Run the flywheel to shoot optimally in the GREEN Zone
-		if (controlWorking.getRawButton(Utility.BUTTON_LB) && controlWorking.getRawButton(Utility.BUTTON_A)) {
-			shooter.setFlywheelSpeed(2400);
-			shooter.setPivotPosition(130);
-			aimMode = true;
-			aimModePosition = 130;
-			leds.setLEDs(Blinkin.GREEN);
-		}
-		// Run the flywheel to shoot optimally in the YELLOW Zone
-		if (controlWorking.getRawButton(Utility.BUTTON_LB) && controlWorking.getRawButton(Utility.BUTTON_Y)) {
-			shooter.setFlywheelSpeed(2400);
-			shooter.setPivotPosition(130);
-			aimMode = true;
-			aimModePosition = 130;
-			leds.setLEDs(Blinkin.YELLOW);
-		}
-		// Run the flywheel to shoot optimally in the BLUE Zone
-		if (controlWorking.getRawButton(Utility.BUTTON_LB) && controlWorking.getRawButton(Utility.BUTTON_X)) {
-			shooter.setFlywheelSpeed(2400);
-			shooter.setPivotPosition(130);
-			aimMode = true;
-			aimModePosition = 130;
-			leds.setLEDs(Blinkin.SKY_BLUE);
-		}
-		// Run the flywheel to shoot optimally in the RED Zone
-		if (controlWorking.getRawButton(Utility.BUTTON_LB) && controlWorking.getRawButton(Utility.BUTTON_B)) {
-			shooter.setFlywheelSpeed(2400);
-			shooter.setPivotPosition(130);
-			aimMode = true;
-			aimModePosition = 130;
-			leds.setLEDs(Blinkin.RED);
-		}
 
 		// End OPERATOR DRIVING
 
